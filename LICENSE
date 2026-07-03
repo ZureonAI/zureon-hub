@@ -1,0 +1,45 @@
+MIT License
+
+Copyright (c) 2026 ZUREON (entity formation pending — to be replaced with "ZUREON OÜ" upon Estonian incorporation)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Scope clarification
+
+This MIT License covers the SOFTWARE in this repository (the ZUREON HUB
+Next.js application): TON Connect 2.0 integration, wallet UI/UX flows, AI
+Review request-building logic, STON.fi swap payload construction, and all
+supporting TypeScript/React application code and build tooling under `src/`.
+
+The AI proxy backend, rate limiting, and prompt-injection guard this app
+calls (`/.netlify/functions/ai-proxy`) live in ZUREON's main site repository
+and are not part of this repository.
+
+The following are NOT covered by this MIT License and remain proprietary
+to ZUREON:
+- Brand identity: the "ZUREON" name, logo, wordmark, color palette, and
+  visual identity system
+- The ZUREON HUB application's distinctive UX flows when used as a
+  competing product offering (you may study and adapt the code; you may
+  not republish the ZUREON brand or HUB application as your own)
+
+Trademark rights to "ZUREON" are reserved and are not granted by this
+license.
