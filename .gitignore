@@ -7,7 +7,7 @@ tsconfig.tsbuildinfo
 .env.local
 .env.*.local
 
-# Claude Code local tooling — never commit
+# Local AI assistant tooling — never commit
 .claude/
 
 # Android/Capacitor prototype wrapper — generated, not part of the web app source
