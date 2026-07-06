@@ -8,6 +8,14 @@
  * Flow:
  *   TON → Jetton  — send TON to router with swap cell as payload
  *   Jetton → TON  — send jetton_transfer to user's jetton wallet, forward swap cell
+ *
+ * STATUS: this builder is complete and used by SwapScreen/ReviewWithAIScreen
+ * to construct real swap messages. The swap CTA itself is intentionally
+ * disabled in the UI ("Coming in V2") — not because this code is unfinished,
+ * but because we are not shipping a money-moving swap path before it has
+ * gone through the external security audit (Milestone 4) and more testnet
+ * volume. Don't delete this file thinking it's dead code; don't wire the
+ * button live without re-checking that gate first.
  */
 
 import { beginCell, Address, Cell } from '@ton/core'

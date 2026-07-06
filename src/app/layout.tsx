@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { TonProvider } from '@/components/layout/TonProvider'
 import { StorageBoot } from '@/components/layout/StorageBoot'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
@@ -10,7 +11,7 @@ export const metadata: Metadata = {
   title: 'ZUREON HUB — Interactive Demo',
   description: 'AI-powered TON wallet interface. Review every transaction with Claude before signing.',
   icons: {
-    icon: '/images/favicon.svg',
+    icon: '/images/favicon.png',
   },
 }
 
@@ -25,9 +26,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         <StorageBoot />
-        <TonProvider>
-          {children}
-        </TonProvider>
+        <ErrorBoundary>
+          <TonProvider>
+            {children}
+          </TonProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

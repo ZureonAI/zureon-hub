@@ -26,9 +26,10 @@ export function ScreenLayout({ children, showBack, backHref }: Props) {
           {showBack && (
             <button
               onClick={handleBack}
-              className="text-cyan-400 active:scale-[0.96] transition-transform duration-200 flex items-center justify-center p-sm"
+              aria-label="Go back"
+              className="text-cyan-400 active:scale-[0.96] transition-transform duration-200 flex items-center justify-center p-[10px] -m-[10px]"
             >
-              <span className="material-symbols-outlined">arrow_back</span>
+              <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
             </button>
           )}
           <h1 className="font-semibold text-lg font-black tracking-widest text-cyan-400 uppercase">

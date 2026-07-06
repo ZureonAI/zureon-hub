@@ -22,7 +22,7 @@ export function ReviewWithAIScreen() {
   const [txResult,        setTxResult]        = useState<TxResult | null>(null)
   const [signing,         setSigning]          = useState(false)
   const [signError,       setSignError]        = useState<string | null>(null)
-  const [confirmReal,     setConfirmReal]      = useState(false) // mainnet double-confirm
+  const [confirmReal,     setConfirmReal]      = useState(false) // irreversible-transaction double-confirm (testnet)
   const signingRef = useRef(false)
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export function ReviewWithAIScreen() {
   }, []) // run once on mount
 
   async function handleSign() {
-    // Require explicit mainnet confirmation on first tap
+    // Require explicit confirmation before signing (irreversible on-chain action)
     if (!confirmReal) {
       setConfirmReal(true)
       return
@@ -133,18 +133,18 @@ export function ReviewWithAIScreen() {
       </header>
 
       <main className="pt-[80px] pb-[120px] px-[16px] flex flex-col gap-md">
-        {/* Mainnet double-confirm warning */}
+        {/* Irreversible-transaction double-confirm warning */}
         {confirmReal && (
           <div className="flex flex-col gap-sm p-md rounded-xl border border-error/40 bg-error/5">
             <div className="flex items-center gap-sm">
               <span className="material-symbols-outlined text-error text-[20px]">warning</span>
-              <span className="text-error font-semibold text-label-md">Real mainnet transaction</span>
+              <span className="text-error font-semibold text-label-md">Confirm before signing</span>
             </div>
             <p className="text-on-surface-variant text-[13px] leading-relaxed">
-              This will send funds on <span className="text-white font-medium">TON mainnet</span>. The action is irreversible. Double-check the address and amount above before confirming.
+              This will send funds on <span className="text-white font-medium">TON testnet</span>. The action is irreversible. Double-check the address and amount above before confirming.
             </p>
             <p className="text-on-surface-variant/60 text-[11px]">
-              Tap "Confirm &amp; Sign" below to proceed, or Cancel to go back.
+              Tap &ldquo;Confirm &amp; Sign&rdquo; below to proceed, or Cancel to go back.
             </p>
           </div>
         )}
@@ -212,7 +212,7 @@ export function ReviewWithAIScreen() {
             </div>
             <div>
               <div className="text-label-md font-semibold text-white">ZUREON AI Analysis</div>
-              <div className="text-[10px] text-on-surface-variant">Claude Sonnet</div>
+              <div className="text-[10px] text-on-surface-variant">Claude Haiku</div>
             </div>
           </div>
 
