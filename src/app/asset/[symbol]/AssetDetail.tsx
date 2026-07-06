@@ -25,7 +25,7 @@ export function AssetDetail({ symbol }: { symbol: string }) {
     : null
 
   return (
-    <ScreenLayout showBack backHref="/hub-demo/dashboard">
+    <ScreenLayout showBack backHref="/dashboard">
       <GlassCard className="p-lg flex flex-col items-center gap-md">
         {isTon ? (
           <div
@@ -38,6 +38,7 @@ export function AssetDetail({ symbol }: { symbol: string }) {
           <TokenIcon src={jetton?.image} symbol={symbol} size={64} />
         )}
         <div className="text-center">
+          <div className="text-label-md text-on-surface-variant uppercase tracking-wider mb-xs">{name}</div>
           <div className="text-display text-white">{balance}</div>
           {usd && <div className="text-headline-md text-on-surface-variant mt-xs">{usd}</div>}
           {isTon && tonPriceUsd > 0 && (

@@ -8,6 +8,7 @@ import { GlassCard } from '@/components/ui/GlassCard'
 import { TON_ADDR, formatRate, parsePriceImpact } from '@/lib/stonfi'
 import { SWAP_GAS_TON, USDT_ADDR } from '@/lib/constants'
 import { buildSwapPendingReview } from '@/lib/stonfi-builder'
+import { tokenFallback } from '@/lib/token-icon-fallback'
 
 const NOT_ADDR = 'EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT'
 
@@ -16,14 +17,6 @@ const BETA_ASSETS = [
   { contractAddress: USDT_ADDR, symbol: 'USDT', name: 'Tether',  decimals: 6, logo: 'https://coin-images.coingecko.com/coins/images/325/large/Tether.png' },
   { contractAddress: NOT_ADDR,  symbol: 'NOT',  name: 'Notcoin', decimals: 9, logo: 'https://assets.coingecko.com/coins/images/34982/large/notcoin.png' },
 ]
-
-const TOKEN_COLORS: Record<string, string> = { TON: '00D4FF', USDT: '26A17B', NOT: 'F7B900' }
-function tokenFallback(e: React.SyntheticEvent<HTMLImageElement>, symbol: string) {
-  const c = TOKEN_COLORS[symbol] || '888888'
-  const s = encodeURIComponent(symbol.slice(0, 3))
-  e.currentTarget.onerror = null
-  e.currentTarget.src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='16' fill='%23${c}'/><text x='16' y='21' text-anchor='middle' font-size='11' font-weight='700' fill='white' font-family='sans-serif'>${s}</text></svg>`
-}
 
 export function SwapScreen() {
   const router     = useRouter()
@@ -222,9 +215,17 @@ export function SwapScreen() {
       )}
 
       {/* Action */}
+      {/*
+        Intentionally disabled, not unfinished: the STON.fi TL-B builder below
+        (lib/stonfi-builder.ts) and buildSwapMessages() are real, working code.
+        This CTA stays gated until the external security audit (Milestone 4)
+        and a formal STON.fi integration agreement are in place — see README
+        "Security model" / grant roadmap. Re-check that before wiring it live.
+      */}
       <div className="flex flex-col gap-xs">
         <button
           disabled
+          onClick={handleSwapSubmit}
           className="w-full bg-surface-container/40 text-on-surface-variant font-medium py-[14px] px-md rounded-xl flex items-center justify-center gap-xs cursor-not-allowed border border-white/5"
         >
           <span className="material-symbols-outlined text-[18px]">schedule</span>

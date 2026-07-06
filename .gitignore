@@ -6,3 +6,14 @@ tsconfig.tsbuildinfo
 .env
 .env.local
 .env.*.local
+
+# Claude Code local tooling — never commit
+.claude/
+
+# Android/Capacitor prototype wrapper — generated, not part of the web app source
+android/
+capacitor-www/
+*.apk
+
+# Local Netlify folder
+.netlify

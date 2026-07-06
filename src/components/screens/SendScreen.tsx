@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import { ScreenLayout } from '@/components/layout/ScreenLayout'
 import { GlassCard } from '@/components/ui/GlassCard'
+import { tokenFallback } from '@/lib/token-icon-fallback'
 
 const TON_ADDRESS_RE = /^[EU][QU][A-Za-z0-9_-]{46}$|^-?[0-9]+:[A-Fa-f0-9]{64}$/
 
@@ -14,14 +15,6 @@ const ASSETS = [
   { symbol: 'USDT', name: 'Tether',   logo: 'https://coin-images.coingecko.com/coins/images/325/large/Tether.png',        enabled: false },
   { symbol: 'NOT',  name: 'Notcoin',  logo: 'https://assets.coingecko.com/coins/images/34982/large/notcoin.png',          enabled: false },
 ]
-
-const TOKEN_COLORS: Record<string, string> = { TON: '00D4FF', USDT: '26A17B', NOT: 'F7B900' }
-function tokenFallback(e: React.SyntheticEvent<HTMLImageElement>, symbol: string) {
-  const c = TOKEN_COLORS[symbol] || '888888'
-  const s = encodeURIComponent(symbol.slice(0, 3))
-  e.currentTarget.onerror = null
-  e.currentTarget.src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='16' fill='%23${c}'/><text x='16' y='21' text-anchor='middle' font-size='11' font-weight='700' fill='white' font-family='sans-serif'>${s}</text></svg>`
-}
 
 export function SendScreen() {
   const router = useRouter()
@@ -92,9 +85,9 @@ export function SendScreen() {
             type="button"
             onClick={() => router.push('/scan')}
             aria-label="Scan QR code"
-            className="text-primary-container active:scale-[0.92] transition-transform"
+            className="text-primary-container active:scale-[0.92] transition-transform p-[13px] -m-[13px]"
           >
-            <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden="true">qr_code_scanner</span>
           </button>
         </div>
         <div className={`flex items-center gap-sm border-b-2 pb-sm transition-colors ${errors.to ? 'border-error' : 'border-surface-container focus-within:border-primary-container'}`}>
