@@ -29,7 +29,7 @@ HTML/JS served from a CDN.
 | NFT Gallery | `/nfts` | NFTs held in the connected wallet, read directly from chain |
 | Explore | `/explore`, `/explore/[id]`, `/explore/[id]/ask` | Curated catalog of TON dApps with risk labels and a per-dApp AI chat |
 | Learn | `/learn`, `/learn/[lesson]` | Short in-context lessons |
-| Asset detail | `/asset/[symbol]` | Per-token balance and contract info |
+| Asset detail | `/asset/[symbol]` | Per-token balance, contract info, and transaction history |
 
 ## Architecture notes
 
