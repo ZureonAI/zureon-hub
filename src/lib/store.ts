@@ -12,6 +12,7 @@ interface AppState {
   nfts: NftItem[]
   nftsLoading: boolean
   pendingReview: PendingReview | null
+  connectError: string | null
 
   setWallet: (w: Partial<WalletState>) => void
   setTonPrice: (price: number) => void
@@ -20,6 +21,7 @@ interface AppState {
   setNfts: (nfts: NftItem[]) => void
   setNftsLoading: (v: boolean) => void
   setPendingReview: (r: PendingReview | null) => void
+  setConnectError: (e: string | null) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -35,6 +37,7 @@ export const useStore = create<AppState>((set) => ({
   nfts: [],
   nftsLoading: false,
   pendingReview: null,
+  connectError: null,
 
   setWallet: (w) => set(s => ({ wallet: { ...s.wallet, ...w } })),
   setTonPrice: (price) => set({ tonPriceUsd: price }),
@@ -43,4 +46,5 @@ export const useStore = create<AppState>((set) => ({
   setNfts: (nfts) => set({ nfts }),
   setNftsLoading: (v) => set({ nftsLoading: v }),
   setPendingReview: (r) => set({ pendingReview: r }),
+  setConnectError: (e) => set({ connectError: e }),
 }))

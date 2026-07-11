@@ -32,7 +32,7 @@ export function NFTsScreen() {
             </div>
           </div>
           <button
-            onClick={() => tonConnectUI.openModal()}
+            onClick={() => { if (!tonConnectUI.connected) tonConnectUI.openModal() }}
             className="w-full bg-primary-container text-black font-medium py-[14px] px-md rounded-xl flex items-center justify-center gap-xs active:scale-[0.96] hover:opacity-90 transition-all shadow-[0_0_10px_rgba(0,212,255,0.08)]"
           >
             <span className="material-symbols-outlined text-[18px]">account_balance_wallet</span>

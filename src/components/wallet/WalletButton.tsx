@@ -50,7 +50,7 @@ export function WalletButton() {
 
   return (
     <button
-      onClick={() => tonConnectUI.openModal()}
+      onClick={() => { if (!tonConnectUI.connected) tonConnectUI.openModal() }}
       className="bg-primary-container text-black text-label-md py-[6px] px-[14px] rounded-full flex items-center gap-xs active:scale-[0.96] hover:opacity-90 transition-all duration-200"
     >
       <span className="material-symbols-outlined text-[16px]">account_balance_wallet</span>
