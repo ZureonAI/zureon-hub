@@ -27,8 +27,9 @@ HTML/JS served from a CDN.
 | Review with AI | `/review` | Claude-powered transaction review before signing — plain-language risk summary |
 | Swap | `/swap` | STON.fi swap UI (payload builder implemented; swap execution gated as "Coming in V2") |
 | NFT Gallery | `/nfts` | NFTs held in the connected wallet, read directly from chain |
+| NFT detail | `/nft?address=` | Single NFT view — item/collection address, send disabled pending V2 |
 | Explore | `/explore`, `/explore/[id]`, `/explore/[id]/ask` | Curated catalog of TON dApps with risk labels and a per-dApp AI chat |
-| Learn | `/learn`, `/learn/[lesson]` | Short in-context lessons |
+| Learn | `/learn` | Short in-context lessons, rendered via in-page modals |
 | Asset detail | `/asset/[symbol]` | Per-token balance, contract info, and transaction history |
 
 ## Architecture notes
@@ -50,6 +51,15 @@ HTML/JS served from a CDN.
   (`src/lib/stonfi-builder.ts`) — correct swap/jetton-transfer opcodes,
   currently gated behind a "Coming in V2" flag pending mainnet + formal
   integration.
+- **Android wrapper**: a thin Capacitor shell (`app.zureon.hub`, native
+  source under `android/` — gitignored, not part of this repo) points
+  straight at `https://zureon.app/hub-dist/` rather than bundling a local
+  copy of the static export. `src/lib/nativeBridge.ts` +
+  `src/hooks/useNativeBridgeSync.ts` push a portfolio snapshot
+  (balance/USD/AI status/last tx) to a native plugin whenever the dashboard's
+  wallet state changes; a no-op outside that wrapper. The companion ZUREON
+  launcher app reads it back through a signature-pinned `ContentProvider` to
+  drive its home-screen tile and widget.
 
 ## Local development
 
