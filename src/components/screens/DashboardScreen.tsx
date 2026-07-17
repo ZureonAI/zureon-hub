@@ -11,6 +11,7 @@ import { formatAddress, formatTon } from '@/lib/tonapi'
 import { useTonConnectUI } from '@tonconnect/ui-react'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useProfileInsight } from '@/hooks/useProfileInsight'
+import { useNativeBridgeSync } from '@/hooks/useNativeBridgeSync'
 
 export function DashboardScreen() {
   useTonPrice()
@@ -21,6 +22,11 @@ export function DashboardScreen() {
   const tonPriceUsd = useStore(s => s.tonPriceUsd)
   const { jettons, loading: jettonsLoading } = useJettons()
   const { txs, loading: txLoading } = useTransactions(wallet.address ?? undefined)
+  const insight = useProfileInsight()
+
+  // Keeps the launcher's home tile / widget in sync with what's on screen here —
+  // see src/lib/nativeBridge.ts. No-ops outside the Capacitor Android wrapper.
+  useNativeBridgeSync({ wallet, tonPriceUsd, txs, aiLoading: insight.loading })
 
   const tonAmount = wallet.balanceNano ? Number(wallet.balanceNano) / 1e9 : 0
   const totalUsd = tonPriceUsd > 0 ? tonAmount * tonPriceUsd : null
@@ -229,7 +235,7 @@ export function DashboardScreen() {
       </section>
 
       {/* AI Profile Insight */}
-      {wallet.connected && <ProfileInsightCard />}
+      {wallet.connected && <ProfileInsightCard {...insight} />}
 
       {/* Transaction History */}
       {wallet.connected && (
@@ -275,9 +281,12 @@ export function DashboardScreen() {
   )
 }
 
-function ProfileInsightCard() {
-  const { text, loading, error, refresh } = useProfileInsight()
-
+function ProfileInsightCard({
+  text,
+  loading,
+  error,
+  refresh,
+}: ReturnType<typeof useProfileInsight>) {
   if (!text && !loading && !error) return null
 
   return (
