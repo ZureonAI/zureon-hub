@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import type { NftItem } from '@/types/nft'
 
 interface Props {
@@ -7,7 +8,10 @@ interface Props {
 
 export function NftCard({ nft }: Props) {
   return (
-    <div className="glass-card rounded-[16px] overflow-hidden flex flex-col">
+    <Link
+      href={`/nft?address=${encodeURIComponent(nft.address)}`}
+      className="glass-card rounded-[16px] overflow-hidden flex flex-col active:scale-[0.97] transition-transform"
+    >
       <div className="aspect-square bg-white/[0.04] relative flex items-center justify-center">
         {nft.image ? (
           <Image
@@ -27,6 +31,6 @@ export function NftCard({ nft }: Props) {
           <div className="text-[10px] text-on-surface-variant truncate">{nft.collectionName}</div>
         )}
       </div>
-    </div>
+    </Link>
   )
 }
