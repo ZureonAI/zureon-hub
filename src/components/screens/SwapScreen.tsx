@@ -149,7 +149,8 @@ export function SwapScreen() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
           <button
             onClick={flipAssets}
-            className="w-10 h-10 bg-[#141414] border-4 border-[#0a0a0a] rounded-full flex items-center justify-center hover:bg-[#1e1e1e] active:scale-90 transition-all shadow-[0_0_10px_rgba(0,212,255,0.1)]"
+            aria-label="Swap direction"
+            className="w-11 h-11 bg-[#141414] border-4 border-[#0a0a0a] rounded-full flex items-center justify-center hover:bg-[#1e1e1e] active:scale-90 transition-all shadow-[0_0_10px_rgba(0,212,255,0.1)]"
           >
             <span className="material-symbols-outlined text-primary-container text-[18px]">swap_vert</span>
           </button>

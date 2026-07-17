@@ -39,7 +39,7 @@ export function ReceiveScreen() {
       <div className="bg-surface-variant/5 border border-surface-variant/20 rounded-xl p-3 flex items-start gap-sm">
         <span className="material-symbols-outlined text-primary-container text-[18px] mt-0.5">info</span>
         <p className="text-xs text-outline flex-1">
-          This address accepts <strong className="text-on-surface">TON, USDT, NOT</strong> and all TON-network tokens.
+          This address accepts <strong className="text-on-surface">TON, USDT, NOT, NFTs</strong> and all TON-network tokens.
           Always verify you&apos;re on the <strong className="text-on-surface">TON network</strong> before sending.
         </p>
       </div>

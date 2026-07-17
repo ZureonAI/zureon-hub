@@ -85,6 +85,19 @@ export interface SwapMessage {
 
 /**
  * Fetches the jetton wallet address for a given owner via STON.fi API.
+ *
+ * SECURITY NOTE (2026-07-11 audit): this address becomes the actual
+ * destination of a real transfer in the Jetton→TON path below — if
+ * api.ston.fi were ever compromised or MITM'd, a malformed-but-plausible
+ * address here could redirect funds. `Address.parse` below only catches a
+ * garbage/malformed response (wrong length, invalid checksum, non-address
+ * string) — it does NOT independently re-derive the expected jetton-wallet
+ * address on-chain from (jettonAddress, ownerAddress) to confirm this is
+ * really the right wallet. That stronger check is real work (needs the
+ * jetton master's wallet code to compute the deterministic contract
+ * address) and belongs with the external security audit gating V2 (see the
+ * "Coming in V2" note in buildSwapMessages below) — this function must not
+ * be wired into a live, unreviewed swap path until that's done.
  */
 async function getJettonWallet(jettonAddress: string, ownerAddress: string): Promise<string> {
   const url = `${STONFI_API}/jetton/${encodeURIComponent(jettonAddress)}/address?owner_address=${encodeURIComponent(ownerAddress)}`
@@ -92,6 +105,11 @@ async function getJettonWallet(jettonAddress: string, ownerAddress: string): Pro
   if (!res.ok) throw new Error(`STON.fi wallet lookup ${res.status}`)
   const data = await res.json() as { address: string }
   if (!data.address) throw new Error('STON.fi wallet address missing in response')
+  try {
+    Address.parse(data.address)
+  } catch {
+    throw new Error('STON.fi returned a malformed jetton wallet address')
+  }
   return data.address
 }
 
