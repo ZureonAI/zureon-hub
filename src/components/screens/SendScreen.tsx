@@ -6,7 +6,11 @@ import { ScreenLayout } from '@/components/layout/ScreenLayout'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { tokenFallback } from '@/lib/token-icon-fallback'
 
-const TON_ADDRESS_RE = /^[EU][QU][A-Za-z0-9_-]{46}$|^-?[0-9]+:[A-Fa-f0-9]{64}$/
+// Accepts ALL user-friendly forms (48-char base64url): mainnet EQ/UQ AND
+// testnet kQ/0Q. The old [EU][QU] prefix rejected every testnet address
+// (0Q…/kQ…) with "Invalid TON address format" even for addresses the hub itself
+// issued on testnet. Matches the backend's isValidTonAddress in _lib.js.
+const TON_ADDRESS_RE = /^[A-Za-z0-9_-]{48}$|^-?[0-9]+:[A-Fa-f0-9]{64}$/
 
 // Jetton send requires a separate TEP-74 transfer payload — landing in V2.
 // USDT/NOT shown in selector with explicit "Coming in V2" lock so users know they're on the roadmap.
@@ -95,7 +99,7 @@ export function SendScreen() {
             type="text"
             value={to}
             onChange={e => { setTo(e.target.value); setErrors(p => ({ ...p, to: undefined })) }}
-            placeholder="EQA... or UQA..."
+            placeholder="EQ… UQ… kQ… 0Q…"
             className="bg-transparent border-none outline-none w-full text-base text-on-surface placeholder:text-outline"
           />
         </div>

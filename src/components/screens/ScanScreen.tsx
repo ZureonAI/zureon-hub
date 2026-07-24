@@ -9,7 +9,11 @@ import { GlassCard } from '@/components/ui/GlassCard'
 
 // Mirrors the format check in SendScreen.tsx — kept local so this screen
 // has no dependency on other screens' internals.
-const TON_ADDRESS_RE = /^[EU][QU][A-Za-z0-9_-]{46}$|^-?[0-9]+:[A-Fa-f0-9]{64}$/
+// Accepts ALL user-friendly forms (48-char base64url): mainnet EQ/UQ AND
+// testnet kQ/0Q — the old [EU][QU] prefix silently rejected every testnet
+// address (0Q…/kQ…), which broke both QR scan and manual paste while the app
+// runs on testnet. Matches the backend's isValidTonAddress in _lib.js.
+const TON_ADDRESS_RE = /^[A-Za-z0-9_-]{48}$|^-?[0-9]+:[A-Fa-f0-9]{64}$/
 
 function extractAddress(payload: string): string | null {
   const trimmed = payload.trim()
@@ -166,7 +170,7 @@ export function ScanScreen() {
             type="text"
             value={manualInput}
             onChange={e => setManualInput(e.target.value)}
-            placeholder="EQA... or UQA..."
+            placeholder="EQ… UQ… kQ… 0Q…"
             className="bg-surface-container/30 border border-white/5 rounded-lg px-sm py-xs text-base text-on-surface placeholder:text-outline"
           />
           <button

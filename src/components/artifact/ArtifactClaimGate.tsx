@@ -77,12 +77,26 @@ export function ArtifactClaimGate() {
     }
   }, [])
 
-  // Evaluate eligibility whenever the connected wallet changes.
+  // Live refs so the poll below reads current open/status without stale closures
+  // and never interrupts an open modal or an in-flight claim.
+  const openRef = useRef(false)
+  const statusRef = useRef<ClaimStatus>('idle')
+  useEffect(() => { openRef.current = open }, [open])
+  useEffect(() => { statusRef.current = status }, [status])
+
+  // Evaluate eligibility on connect AND keep re-checking, so the modal auto-opens
+  // the MOMENT the wallet crosses a milestone (20 tx) — not only if the user
+  // happens to reconnect afterwards. Re-checks on an interval and on tab focus
+  // (e.g. after sending from another device, then switching back), but never
+  // while the modal is already open or a claim is mid-flight. countTransactions
+  // reads a fresh source (toncenter) so a just-confirmed tx is counted.
   useEffect(() => {
     if (previewRef.current) return
     if (!address) { setOpen(false); return }
     let cancelled = false
-    ;(async () => {
+
+    const evaluate = async (isInitial: boolean) => {
+      if (!isInitial && (openRef.current || statusRef.current === 'claiming')) return
       const count = await countTransactions(address)
       if (cancelled) return
       setTxCount(count)
@@ -94,11 +108,20 @@ export function ArtifactClaimGate() {
         setStatus('idle')
         setErrorMsg(undefined)
         setOpen(true)
-      } else {
+      } else if (isInitial) {
         setOpen(false)
       }
-    })()
-    return () => { cancelled = true }
+    }
+
+    evaluate(true)
+    const id = setInterval(() => evaluate(false), 15000)
+    const onFocus = () => evaluate(false)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [address, preview])
 
   const close = useCallback(() => {

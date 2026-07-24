@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'tonapi.io' },
       { protocol: 'https', hostname: '**.ton-nft.com' },
       { protocol: 'https', hostname: 'cache.tonapi.io' },
+      { protocol: 'https', hostname: 'zureon.app' }, // Genesis Artifact art (get-artifacts)
     ],
   },
 }

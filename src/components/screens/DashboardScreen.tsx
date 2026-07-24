@@ -30,6 +30,10 @@ export function DashboardScreen() {
 
   const tonAmount = wallet.balanceNano ? Number(wallet.balanceNano) / 1e9 : 0
   const totalUsd = tonPriceUsd > 0 ? tonAmount * tonPriceUsd : null
+  // Connected but the first balance fetch hasn't landed yet (balanceNano===null).
+  // Show a skeleton instead of "$0.00" so a reload never flashes a fake zero —
+  // matches how the "Your Assets" TON row below already handles the null case.
+  const balanceLoading = wallet.connected && wallet.balanceNano === null
 
   function navigate(path: string) {
     if (!wallet.connected) {
@@ -50,7 +54,9 @@ export function DashboardScreen() {
             {wallet.connected ? 'Total Balance' : 'TON Network · Live'}
           </h2>
           <div className="text-display tracking-tight text-white flex items-baseline gap-sm">
-            {wallet.connected && totalUsd !== null ? (
+            {balanceLoading ? (
+              <span className="inline-block h-[0.85em] w-[160px] rounded-xl bg-white/[0.07] animate-pulse" aria-label="Loading balance" />
+            ) : wallet.connected && totalUsd !== null ? (
               <>
                 <span>${Number(totalUsd.toFixed(2).split('.')[0]).toLocaleString()}</span>
                 <span className="text-headline-md text-on-surface-variant">
@@ -67,9 +73,11 @@ export function DashboardScreen() {
             )}
           </div>
           <div className="text-label-md text-primary-container mt-1">
-            {wallet.connected
-              ? `${tonAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })} TON · on-chain`
-              : 'Connect a TON wallet to see your portfolio'}
+            {balanceLoading
+              ? 'Loading your portfolio…'
+              : wallet.connected
+                ? `${tonAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })} TON · on-chain`
+                : 'Connect a TON wallet to see your portfolio'}
           </div>
         </div>
 
@@ -168,9 +176,9 @@ export function DashboardScreen() {
                 ) : (
                   <div className="w-16 h-3 rounded bg-white/10 animate-pulse ml-auto" aria-label="Loading balance" />
                 )}
-                {totalUsd !== null ? (
+                {!balanceLoading && totalUsd !== null ? (
                   <div className="text-label-sm text-on-surface-variant">${totalUsd.toFixed(2)}</div>
-                ) : wallet.balanceNano !== null && tonPriceUsd === 0 ? (
+                ) : wallet.balanceNano === null || tonPriceUsd === 0 ? (
                   <div className="w-10 h-2 rounded bg-white/[0.06] animate-pulse ml-auto mt-[6px]" />
                 ) : null}
               </div>

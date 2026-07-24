@@ -2,7 +2,7 @@
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet, useTonAddress } from '@tonconnect/ui-react'
 import { useEffect, useRef } from 'react'
 import { useStore } from '@/lib/store'
-import { getAccount } from '@/lib/tonapi'
+import { getBalance } from '@/lib/tonapi'
 import { reportConnect, chainToNetwork } from '@/lib/track'
 import { ArtifactClaimGate } from '@/components/artifact/ArtifactClaimGate'
 
@@ -33,9 +33,6 @@ function WalletBridge() {
       const walletName = (wallet as { device?: { appName?: string } }).device?.appName ?? null
       setWallet({ connected: true, address, walletName, balanceNano: null })
       setConnectError(null)
-      getAccount(address)
-        .then(acc => setWallet({ balanceNano: acc.balance }))
-        .catch(() => {})
 
       // KPI metric: unique wallet connection. Fire-and-forget, never blocks UX.
       if (reportedAddress.current !== address) {
@@ -48,6 +45,30 @@ function WalletBridge() {
       reportedAddress.current = null
     }
   }, [wallet, address, setWallet, setConnectError])
+
+  // Live balance: poll while connected so a deposit/send reflects within a few
+  // seconds instead of only at connect time. Uses getBalance (toncenter-first),
+  // since tonapi's testnet indexer can lag minutes behind an already-confirmed
+  // deposit. Also refetches immediately when the tab regains focus (e.g. after
+  // the user tops up in their wallet app and switches back).
+  useEffect(() => {
+    if (!wallet || !address) return
+    let cancelled = false
+    const refresh = () => {
+      getBalance(address)
+        .then(bal => { if (!cancelled && bal !== null) setWallet({ balanceNano: bal }) })
+        .catch(() => {})
+    }
+    refresh()
+    const id = setInterval(refresh, 8000)
+    const onFocus = () => refresh()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [wallet, address, setWallet])
 
   // Surface bridge/connection failures as a readable message instead of a hang.
   useEffect(() => {
