@@ -52,9 +52,9 @@ export function DashboardScreen() {
           <div className="text-display tracking-tight text-white flex items-baseline gap-sm">
             {wallet.connected && totalUsd !== null ? (
               <>
-                <span>${Math.floor(totalUsd).toLocaleString()}</span>
+                <span>${Number(totalUsd.toFixed(2).split('.')[0]).toLocaleString()}</span>
                 <span className="text-headline-md text-on-surface-variant">
-                  .{(totalUsd % 1).toFixed(2).substring(1)}
+                  .{totalUsd.toFixed(2).split('.')[1]}
                 </span>
               </>
             ) : tonPriceUsd > 0 ? (
