@@ -96,7 +96,7 @@ export function SendScreen() {
             value={to}
             onChange={e => { setTo(e.target.value); setErrors(p => ({ ...p, to: undefined })) }}
             placeholder="EQA... or UQA..."
-            className="bg-transparent border-none outline-none w-full text-sm text-on-surface placeholder:text-outline"
+            className="bg-transparent border-none outline-none w-full text-base text-on-surface placeholder:text-outline"
           />
         </div>
         {errors.to && <span className="text-error text-xs">{errors.to}</span>}
@@ -124,7 +124,8 @@ export function SendScreen() {
           <label className="text-xs text-outline mb-xs block">Amount</label>
           <div className="flex items-baseline gap-sm">
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={amount}
               onChange={e => { setAmount(e.target.value); setErrors(p => ({ ...p, amount: undefined })) }}
               placeholder="0"
@@ -147,7 +148,7 @@ export function SendScreen() {
             onChange={e => setComment(e.target.value)}
             placeholder="Add a note"
             maxLength={120}
-            className="bg-surface-container/30 border border-white/5 rounded-lg px-sm py-xs text-sm text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container/40"
+            className="bg-surface-container/30 border border-white/5 rounded-lg px-sm py-xs text-base text-on-surface placeholder:text-outline focus:outline-none focus:border-primary-container/40"
           />
         </div>
       </GlassCard>

@@ -20,8 +20,15 @@ export function ScreenLayout({ children, showBack, backHref }: Props) {
   }
 
   return (
-    <div className="bg-black text-on-surface overflow-y-auto font-sans antialiased overflow-x-hidden flex flex-col min-h-screen">
-      <header className="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-20 pt-4 bg-black/80 backdrop-blur-2xl border-b border-white/10">
+    <div className="bg-black text-on-surface overflow-y-auto font-sans antialiased overflow-x-hidden flex flex-col min-h-dvh">
+      {/* Header + nav grow by the device safe-area insets (env()) so content
+          clears the Dynamic Island / notch (top) and home indicator (bottom)
+          when the app runs standalone on iPhone Pro. env()=0 on devices
+          without insets, so the layout is unchanged there. */}
+      <header
+        className="fixed top-0 w-full z-50 flex items-center justify-between px-6 bg-black/80 backdrop-blur-2xl border-b border-white/10"
+        style={{ height: 'calc(80px + env(safe-area-inset-top))', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}
+      >
         <div className="flex items-center gap-md">
           {showBack && (
             <button
@@ -41,7 +48,10 @@ export function ScreenLayout({ children, showBack, backHref }: Props) {
         </div>
       </header>
 
-      <main className="pt-[104px] pb-[100px] md:px-lg flex flex-col gap-[24px] md:gap-[32px] w-full px-[16px]">
+      <main
+        className="md:px-lg flex flex-col gap-[24px] md:gap-[32px] w-full px-[16px]"
+        style={{ paddingTop: 'calc(104px + env(safe-area-inset-top))', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}
+      >
         {children}
       </main>
 

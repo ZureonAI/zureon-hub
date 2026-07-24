@@ -12,7 +12,10 @@ export function BottomNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="bg-[#1E1E1E]/60 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.3)] fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 rounded-t-xl">
+    <nav
+      className="bg-[#1E1E1E]/60 backdrop-blur-xl border-t border-white/10 shadow-[0_-4px_24px_rgba(0,0,0,0.3)] fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 rounded-t-xl"
+      style={{ height: 'calc(80px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+    >
       {tabs.map(tab => {
         const active = pathname?.includes(tab.match) ?? false
         return (

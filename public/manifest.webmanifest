@@ -1,0 +1,26 @@
+{
+  "name": "ZUREON HUB",
+  "short_name": "ZUREON HUB",
+  "description": "AI-guided TON wallet companion. Review every transaction before you sign.",
+  "start_url": "/hub-dist/dashboard/",
+  "scope": "/hub-dist/",
+  "display": "standalone",
+  "background_color": "#131313",
+  "theme_color": "#00D4FF",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "/hub-dist/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/hub-dist/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -130,7 +130,7 @@ export function AskAI({ id }: { id: string }) {
   return (
     <div className="bg-black text-on-surface min-h-screen flex flex-col font-sans antialiased">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 flex items-center gap-sm px-3 h-[60px] bg-black/80 backdrop-blur-2xl border-b border-white/10">
+      <header className="fixed top-0 w-full z-50 flex items-center gap-sm px-3 bg-black/80 backdrop-blur-2xl border-b border-white/10" style={{ height: 'calc(60px + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)' }}>
         <button
           onClick={() => router.back()}
           aria-label="Go back"
@@ -148,7 +148,7 @@ export function AskAI({ id }: { id: string }) {
         </div>
       </header>
 
-      <main ref={scrollRef} className="pt-[80px] pb-[140px] px-[16px] flex flex-col gap-md overflow-y-auto flex-1">
+      <main ref={scrollRef} className="px-[16px] flex flex-col gap-md overflow-y-auto flex-1" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))', paddingBottom: 'calc(140px + env(safe-area-inset-bottom))' }}>
         {messages.length === 0 && !loading && (
           <GlassCard className="p-md text-on-surface-variant text-label-sm">
             Loading {p.name} insight...
@@ -223,7 +223,7 @@ export function AskAI({ id }: { id: string }) {
       </main>
 
       {/* Input bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 p-md flex gap-sm z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 p-md flex gap-sm z-40" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
         <input
           type="text"
           value={input}
@@ -231,7 +231,7 @@ export function AskAI({ id }: { id: string }) {
           onKeyDown={e => { if (e.key === 'Enter' && !loading) sendMessage(input) }}
           placeholder={`Ask about ${p.name}...`}
           disabled={loading}
-          className="flex-1 min-w-0 bg-surface-container/40 border border-white/10 text-on-surface text-label-md px-md py-sm rounded-xl outline-none focus:border-primary-container/40 disabled:opacity-50"
+          className="flex-1 min-w-0 bg-surface-container/40 border border-white/10 text-on-surface text-base px-md py-sm rounded-xl outline-none focus:border-primary-container/40 disabled:opacity-50"
         />
         <button
           onClick={() => sendMessage(input)}

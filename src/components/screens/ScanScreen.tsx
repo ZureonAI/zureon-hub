@@ -167,7 +167,7 @@ export function ScanScreen() {
             value={manualInput}
             onChange={e => setManualInput(e.target.value)}
             placeholder="EQA... or UQA..."
-            className="bg-surface-container/30 border border-white/5 rounded-lg px-sm py-xs text-sm text-on-surface placeholder:text-outline"
+            className="bg-surface-container/30 border border-white/5 rounded-lg px-sm py-xs text-base text-on-surface placeholder:text-outline"
           />
           <button
             onClick={handleManualCheck}

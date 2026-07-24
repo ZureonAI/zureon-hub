@@ -6,6 +6,7 @@ import { beginCell } from '@ton/core'
 import { useStore } from '@/lib/store'
 import { useAIReview } from '@/hooks/useAIReview'
 import { buildSwapMessages } from '@/lib/stonfi-builder'
+import { reportTx } from '@/lib/track'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { ConfirmationScreen } from '@/components/screens/ConfirmationScreen'
 import type { TxResult } from '@/types/ton'
@@ -78,6 +79,14 @@ export function ReviewWithAIScreen() {
         swapDetails: pendingReview.swapDetails,
         timestamp:   Date.now(),
       })
+
+      // KPI metric: transaction sent. Signed with CHAIN.TESTNET above, so the
+      // network is testnet. Fire-and-forget — never blocks the confirmation UX.
+      if (wallet.address) {
+        const txKind = isSwapTx ? 'swap' : pendingReview.jetton ? 'jetton' : 'send'
+        reportTx(wallet.address, 'testnet', txKind)
+      }
+
       setPendingReview(null)
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e)
@@ -108,7 +117,7 @@ export function ReviewWithAIScreen() {
   return (
     <div className="bg-black text-on-surface min-h-screen flex flex-col font-sans antialiased">
       {/* Header */}
-      <header className="fixed top-0 w-full z-50 flex items-center gap-md px-6 h-[60px] bg-black/80 backdrop-blur-2xl border-b border-white/10">
+      <header className="fixed top-0 w-full z-50 flex items-center gap-md px-6 bg-black/80 backdrop-blur-2xl border-b border-white/10" style={{ height: 'calc(60px + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)' }}>
         <button
           onClick={() => router.back()}
           aria-label="Go back"
@@ -132,7 +141,7 @@ export function ReviewWithAIScreen() {
         </div>
       </header>
 
-      <main className="pt-[80px] pb-[120px] px-[16px] flex flex-col gap-md">
+      <main className="px-[16px] flex flex-col gap-md" style={{ paddingTop: 'calc(80px + env(safe-area-inset-top))', paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}>
         {/* Irreversible-transaction double-confirm warning */}
         {confirmReal && (
           <div className="flex flex-col gap-sm p-md rounded-xl border border-error/40 bg-error/5">
@@ -272,7 +281,7 @@ export function ReviewWithAIScreen() {
       </main>
 
       {/* Action bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 p-md flex gap-md z-40">
+      <div className="fixed bottom-0 left-0 right-0 bg-black/80 backdrop-blur-xl border-t border-white/10 p-md flex gap-md z-40" style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}>
         <button
           onClick={() => router.back()}
           className="flex-1 glass-card border border-white/10 text-on-surface text-label-md py-sm px-md rounded-xl flex items-center justify-center gap-xs active:scale-[0.96] hover:bg-white/5 transition-all"

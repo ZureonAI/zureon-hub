@@ -1,8 +1,10 @@
 'use client'
 import { TonConnectUIProvider, useTonConnectUI, useTonWallet, useTonAddress } from '@tonconnect/ui-react'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStore } from '@/lib/store'
 import { getAccount } from '@/lib/tonapi'
+import { reportConnect, chainToNetwork } from '@/lib/track'
+import { ArtifactClaimGate } from '@/components/artifact/ArtifactClaimGate'
 
 const MANIFEST_URL = 'https://zureon.app/tonconnect-manifest.json'
 
@@ -20,6 +22,11 @@ function WalletBridge() {
   const setWallet = useStore(s => s.setWallet)
   const setConnectError = useStore(s => s.setConnectError)
 
+  // Only report each distinct connected address once per session — the effect
+  // below re-runs on unrelated re-renders, and the KPI endpoint is deduped
+  // server-side anyway, so this just avoids needless requests.
+  const reportedAddress = useRef<string | null>(null)
+
   // Sync SDK connection state into the global store on every change.
   useEffect(() => {
     if (wallet && address) {
@@ -29,8 +36,16 @@ function WalletBridge() {
       getAccount(address)
         .then(acc => setWallet({ balanceNano: acc.balance }))
         .catch(() => {})
+
+      // KPI metric: unique wallet connection. Fire-and-forget, never blocks UX.
+      if (reportedAddress.current !== address) {
+        reportedAddress.current = address
+        const chain = (wallet as { account?: { chain?: string } }).account?.chain
+        reportConnect(address, chainToNetwork(chain))
+      }
     } else {
       setWallet({ connected: false, address: null, walletName: null, balanceNano: null })
+      reportedAddress.current = null
     }
   }, [wallet, address, setWallet, setConnectError])
 
@@ -54,6 +69,7 @@ export function TonProvider({ children }: { children: React.ReactNode }) {
     <TonConnectUIProvider manifestUrl={MANIFEST_URL}>
       <WalletBridge />
       {children}
+      <ArtifactClaimGate />
     </TonConnectUIProvider>
   )
 }
