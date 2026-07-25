@@ -26,8 +26,9 @@ HTML/JS served from a CDN.
 | Receive | `/receive` | Real scannable QR of the connected wallet's address |
 | Review with AI | `/review` | Claude-powered transaction review before signing — plain-language risk summary |
 | Swap | `/swap` | STON.fi swap UI (payload builder implemented; swap execution gated as "Coming in V2") |
-| NFT Gallery | `/nfts` | NFTs held in the connected wallet, read directly from chain |
+| NFT Gallery | `/nfts` | NFTs held in the connected wallet, incl. the earned ZUREON Genesis Artifact |
 | NFT detail | `/nft?address=` | Single NFT view — item/collection address, send disabled pending V2 |
+| Genesis Artifact | modal (auto-opens) | Evolving claim NFT earned through real testnet usage — see architecture notes |
 | Explore | `/explore`, `/explore/[id]`, `/explore/[id]/ask` | Curated catalog of TON dApps with risk labels and a per-dApp AI chat |
 | Learn | `/learn` | Short in-context lessons, rendered via in-page modals |
 | Asset detail | `/asset/[symbol]` | Per-token balance, contract info, and transaction history |
@@ -37,14 +38,24 @@ HTML/JS served from a CDN.
 - **Wallet connection**: `@tonconnect/ui-react` (TON Connect 2.0). The
   manifest is served from the production domain
   (`https://zureon.app/tonconnect-manifest.json`).
-- **On-chain data**: read directly from `tonapi.io` client-side
-  (`src/lib/tonapi.ts`) — balances, jettons, NFTs, transaction history.
-- **AI review**: this app calls a backend AI proxy
-  (`/.netlify/functions/ai-proxy`, `/.netlify/functions/profile-insight`)
-  that wraps the Claude API server-side. That backend — along with rate
-  limiting, prompt-injection guarding, and server-side recipient
-  verification — lives in ZUREON's main site repository, not here. This repo
-  contains the client that calls it.
+- **On-chain data** (`src/lib/tonapi.ts`): balance and transaction history read
+  from **toncenter** with a **tonapi** fallback — toncenter's testnet indexer
+  stays fresh while tonapi's can lag minutes behind a confirmed tx — and are
+  polled (~8s + on tab focus) so a deposit/send reflects within seconds. Jettons
+  and general NFTs come from tonapi.
+- **AI review**: this app calls backend functions
+  (`/.netlify/functions/ai-proxy`, `profile-insight`) that wrap the Claude API
+  server-side. That backend — along with rate limiting, prompt-injection
+  guarding, and server-side recipient verification — lives in ZUREON's main site
+  repository, not here. This repo contains the client that calls it.
+- **Genesis Artifact**: an evolving claim NFT earned through real testnet usage
+  (20 tx → Stage I "Sealed", 50 tx → Stage II "Awakening"; Stage III at mainnet
+  launch). The claim modal auto-opens when the connected wallet crosses a
+  milestone; minting and eligibility (both verified **on-chain**, never from a
+  client counter) run server-side (`/.netlify/functions/claim-nft`), and the
+  gallery surfaces the artifact immediately via `/.netlify/functions/get-artifacts`
+  (fresh, so it shows before tonapi indexes it). Client model in
+  `src/lib/artifact.ts` + `src/components/artifact/`.
 - **State**: Zustand (`src/lib/store.ts`) — wallet state, jetton/NFT
   holdings, pending transaction review.
 - **Swap payloads**: STON.fi v1 TL-B construction via `@ton/core`
