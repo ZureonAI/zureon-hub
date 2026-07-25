@@ -10,31 +10,43 @@ export async function getAccount(address: string) {
   return get<{ balance: string; status: string }>(`/accounts/${encodeURIComponent(address)}`)
 }
 
-// Balance-only read, tuned for freshness. tonapi's testnet indexer has been
-// observed to lag several minutes behind the chain (showing a stale balance
-// after a deposit already confirmed), while toncenter reflected it immediately.
-// So for the live balance we query toncenter FIRST and fall back to tonapi if
-// toncenter is unreachable/rate-limited. Returns nanotons as a string (same
-// shape as getAccount().balance) or null if both sources fail.
+// Live reads (balance, transactions) go to toncenter, whose testnet indexer
+// stays fresh — tonapi's lags minutes-to-days behind a confirmed tx.
+//
+// CRITICAL: we do NOT fall back to tonapi for these polled reads. toncenter
+// occasionally 500s; a tonapi fallback would then return a STALE value, and
+// since these are polled every few seconds the UI would visibly oscillate
+// between the fresh value and the stale one on alternating polls. Instead a
+// failed read returns null and the caller keeps its last-good value. A short
+// timeout + one retry absorbs transient blips so "keep last-good" is rare.
 const TONCENTER_TESTNET = 'https://testnet.toncenter.com/api/v2'
-export async function getBalance(address: string): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `${TONCENTER_TESTNET}/getAddressBalance?address=${encodeURIComponent(address)}`,
-    )
-    if (res.ok) {
-      const d = (await res.json()) as { ok?: boolean; result?: string }
-      if (d.ok && typeof d.result === 'string' && /^\d+$/.test(d.result)) return d.result
+
+async function toncenterGet(path: string, attempts = 2): Promise<Response | null> {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const ctrl = new AbortController()
+      const timer = setTimeout(() => ctrl.abort(), 6000)
+      const res = await fetch(`${TONCENTER_TESTNET}${path}`, { signal: ctrl.signal })
+      clearTimeout(timer)
+      if (res.ok) return res
+    } catch {
+      /* transient — retry */
     }
-  } catch {
-    /* fall through to tonapi */
   }
+  return null
+}
+
+// Balance in nanotons (string), or null on failure → caller keeps last-good.
+export async function getBalance(address: string): Promise<string | null> {
+  const res = await toncenterGet(`/getAddressBalance?address=${encodeURIComponent(address)}`)
+  if (!res) return null
   try {
-    const acc = await getAccount(address)
-    return acc.balance
+    const d = (await res.json()) as { ok?: boolean; result?: string }
+    if (d.ok && typeof d.result === 'string' && /^\d+$/.test(d.result)) return d.result
   } catch {
-    return null
+    /* fall through */
   }
+  return null
 }
 
 export async function getJettonBalances(address: string) {
@@ -146,27 +158,24 @@ function mapToncenterTx(tx: TonCenterTx, ourAddress: string): unknown {
   }
 }
 
-export async function getTransactions(address: string, limit = 20): Promise<unknown[]> {
+// Returns TxEvent-shaped rows, or null on failure → caller keeps last-good.
+// NO tonapi fallback (see toncenterGet note): a stale fallback under polling made
+// the list oscillate between fresh and cached every interval.
+export async function getTransactions(address: string, limit = 20): Promise<unknown[] | null> {
+  const res = await toncenterGet(`/getTransactions?address=${encodeURIComponent(address)}&limit=${limit}`)
+  if (!res) return null
   try {
-    const res = await fetch(
-      `${TONCENTER_TESTNET}/getTransactions?address=${encodeURIComponent(address)}&limit=${limit}`,
-    )
-    if (res.ok) {
-      const d = (await res.json()) as { ok?: boolean; result?: TonCenterTx[] }
-      if (d.ok && Array.isArray(d.result)) {
-        // Drop txs that produced no displayable action (e.g. 0-value service msgs).
-        return d.result
-          .map(tx => mapToncenterTx(tx, address))
-          .filter(e => (e as { actions: unknown[] }).actions.length > 0)
-      }
+    const d = (await res.json()) as { ok?: boolean; result?: TonCenterTx[] }
+    if (d.ok && Array.isArray(d.result)) {
+      // Drop txs that produced no displayable action (e.g. 0-value service msgs).
+      return d.result
+        .map(tx => mapToncenterTx(tx, address))
+        .filter(e => (e as { actions: unknown[] }).actions.length > 0)
     }
   } catch {
-    /* fall through to tonapi */
+    /* fall through */
   }
-  const data = await get<{ events: unknown[] }>(
-    `/accounts/${encodeURIComponent(address)}/events?limit=${limit}`,
-  )
-  return data.events
+  return null
 }
 
 // Genesis Artifact(s) the wallet has claimed, served from our own confirmed

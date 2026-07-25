@@ -36,12 +36,23 @@ export function useTransactions(address: string | undefined) {
     // Clear any previous wallet's list so switching accounts (or entering the
     // screen) shows the loading skeleton, never the prior wallet's stale txs.
     setTxs([])
+    let lastSig = ''
 
     const load = (showSpinner: boolean) => {
       if (showSpinner) setLoading(true)
       getTransactions(address, 10)
         .then(events => {
-          if (!cancelled) { setTxs(events as TxEvent[]); setError(null) }
+          if (cancelled) return
+          // null = toncenter read failed → keep the last-good list untouched
+          // (no stale tonapi fallback, so the list can't flip fresh↔cached).
+          if (events !== null) {
+            const list = events as TxEvent[]
+            // Only re-render when the list actually changed, so a poll over
+            // unchanged data doesn't visibly "refresh" the screen.
+            const sig = list.map(e => e.event_id).join('|')
+            if (sig !== lastSig) { lastSig = sig; setTxs(list) }
+            setError(null)
+          }
         })
         .catch(err => {
           // Keep the last good list on a transient poll failure; only surface an

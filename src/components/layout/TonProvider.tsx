@@ -54,9 +54,17 @@ function WalletBridge() {
   useEffect(() => {
     if (!wallet || !address) return
     let cancelled = false
+    let lastBal: string | null = null
     const refresh = () => {
       getBalance(address)
-        .then(bal => { if (!cancelled && bal !== null) setWallet({ balanceNano: bal }) })
+        .then(bal => {
+          // null = read failed → keep last-good (no stale fallback). Only write
+          // to the store when the value actually changed, so a steady balance
+          // doesn't re-render the dashboard on every poll.
+          if (cancelled || bal === null || bal === lastBal) return
+          lastBal = bal
+          setWallet({ balanceNano: bal })
+        })
         .catch(() => {})
     }
     refresh()
