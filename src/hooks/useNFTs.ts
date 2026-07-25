@@ -23,22 +23,31 @@ export function useNFTs() {
     async function load(showSpinner: boolean) {
       if (showSpinner) setNftsLoading(true)
       try {
-        // Our claimed Genesis Artifact comes from a fresh source (get-artifacts);
-        // tonapi supplies any other NFTs but its testnet indexer lags, so a just-
-        // minted artifact would otherwise be missing. Merge, artifact(s) first,
-        // dedup by address (once tonapi finally indexes ours, the dup is dropped).
+        // Our claimed Genesis Artifact comes from a fresh source (get-artifacts)
+        // so it shows before tonapi's laggy testnet indexer catches up; tonapi
+        // supplies every other NFT. Both can return the SAME artifact — and
+        // get-artifacts sometimes uses a synthetic address (when its on-chain
+        // address lookup hiccups) while tonapi has the real one — so a plain
+        // address dedup let the artifact appear twice. Dedup our Genesis items by
+        // index instead, and prefer the entry with a real on-chain address.
         const [general, artifacts] = await Promise.all([
           getNftItems(address!).catch(() => [] as NftItem[]),
           getArtifacts(address!).catch(() => [] as NftItem[]),
         ])
-        const seen = new Set<string>()
-        const merged: NftItem[] = []
+        const isGenesis = (n: NftItem) =>
+          n.collectionName === 'ZUREON Founders' || (n.name || '').startsWith('ZUREON Genesis Artifact')
+        const isSynthetic = (a: string) => a.startsWith('zureon-artifact-')
+        const byKey = new Map<string, NftItem>()
         for (const n of [...artifacts, ...general] as NftItem[]) {
-          if (!n || seen.has(n.address)) continue
-          seen.add(n.address)
-          merged.push(n)
+          if (!n) continue
+          const key = isGenesis(n) ? `genesis:${n.index}` : `addr:${n.address}`
+          const existing = byKey.get(key)
+          if (!existing) { byKey.set(key, n); continue }
+          // Same artifact from both sources: keep the real-address version so the
+          // detail link works, without adding a duplicate row.
+          if (isSynthetic(existing.address) && !isSynthetic(n.address)) byKey.set(key, n)
         }
-        if (!cancelled) setNfts(merged)
+        if (!cancelled) setNfts([...byKey.values()])
       } catch {
         if (!cancelled && showSpinner) setNfts([])
       } finally {
