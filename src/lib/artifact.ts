@@ -80,6 +80,23 @@ export async function countTransactions(address: string): Promise<number> {
   }
 }
 
+// Highest stage this wallet has ALREADY claimed, per the server's on-chain-
+// backed record (get-artifacts). This is the source of truth for "already
+// claimed" — unlike getAckStage below it works across devices (localStorage is
+// per-device, so a wallet claimed on phone A would otherwise be re-offered on
+// phone B). Returns 0 if nothing claimed. Never throws.
+export async function getClaimedStage(address: string): Promise<number> {
+  try {
+    const res = await fetch(`/.netlify/functions/get-artifacts?address=${encodeURIComponent(address)}`)
+    if (!res.ok) return 0
+    const data = await res.json() as { items?: Array<{ stage?: number }> }
+    const stages = (data.items || []).map(i => Number(i.stage) || 0)
+    return stages.length ? Math.max(...stages) : 0
+  } catch {
+    return 0
+  }
+}
+
 // ── Per-wallet "already acknowledged" memory ─────────────────────────────
 // Stops the modal from re-opening on every mount once the user has seen (and
 // claimed or dismissed) a given stage. Keyed by address so switching wallets

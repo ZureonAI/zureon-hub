@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStore } from '@/lib/store'
 import { useJettons } from '@/hooks/useJettons'
@@ -7,7 +8,7 @@ import { ScreenLayout } from '@/components/layout/ScreenLayout'
 import { GlassCard } from '@/components/ui/GlassCard'
 import { JettonRow } from '@/components/ui/JettonRow'
 import { TxRow } from '@/components/ui/TxRow'
-import { formatAddress, formatTon } from '@/lib/tonapi'
+import { formatAddress, formatTon, getBalance } from '@/lib/tonapi'
 import { useTonConnectUI } from '@tonconnect/ui-react'
 import { useTransactions } from '@/hooks/useTransactions'
 import { useProfileInsight } from '@/hooks/useProfileInsight'
@@ -17,6 +18,7 @@ export function DashboardScreen() {
   useTonPrice()
   const router = useRouter()
   const wallet = useStore(s => s.wallet)
+  const setWallet = useStore(s => s.setWallet)
   const connectError = useStore(s => s.connectError)
   const [tonConnectUI] = useTonConnectUI()
   const tonPriceUsd = useStore(s => s.tonPriceUsd)
@@ -30,10 +32,25 @@ export function DashboardScreen() {
 
   const tonAmount = wallet.balanceNano ? Number(wallet.balanceNano) / 1e9 : 0
   const totalUsd = tonPriceUsd > 0 ? tonAmount * tonPriceUsd : null
-  // Connected but the first balance fetch hasn't landed yet (balanceNano===null).
-  // Show a skeleton instead of "$0.00" so a reload never flashes a fake zero —
-  // matches how the "Your Assets" TON row below already handles the null case.
-  const balanceLoading = wallet.connected && wallet.balanceNano === null
+
+  // On every entry to the dashboard, refetch the balance and show a skeleton
+  // until THIS fetch lands — don't flash the last-known (store-persisted, maybe
+  // stale) value and then visibly jump to the fresh one. `balanceReady` gates
+  // the skeleton; the store value is still what renders once it's fresh.
+  const [balanceReady, setBalanceReady] = useState(false)
+  useEffect(() => {
+    setBalanceReady(false)
+    if (!wallet.connected || !wallet.address) return
+    let cancelled = false
+    getBalance(wallet.address)
+      .then(bal => { if (!cancelled) { if (bal !== null) setWallet({ balanceNano: bal }); setBalanceReady(true) } })
+      .catch(() => { if (!cancelled) setBalanceReady(true) })
+    return () => { cancelled = true }
+  }, [wallet.connected, wallet.address, setWallet])
+
+  // Show the balance skeleton until the first fresh fetch of this visit lands
+  // (or while the value is genuinely absent), instead of a stale/zero flash.
+  const balanceLoading = wallet.connected && (wallet.balanceNano === null || !balanceReady)
 
   function navigate(path: string) {
     if (!wallet.connected) {

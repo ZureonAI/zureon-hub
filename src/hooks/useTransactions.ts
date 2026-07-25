@@ -33,6 +33,9 @@ export function useTransactions(address: string | undefined) {
   useEffect(() => {
     if (!address) { setTxs([]); return }
     let cancelled = false
+    // Clear any previous wallet's list so switching accounts (or entering the
+    // screen) shows the loading skeleton, never the prior wallet's stale txs.
+    setTxs([])
 
     const load = (showSpinner: boolean) => {
       if (showSpinner) setLoading(true)

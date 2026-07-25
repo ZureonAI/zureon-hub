@@ -18,7 +18,7 @@ import { useTonWallet, useTonAddress } from '@tonconnect/ui-react'
 import { chainToNetwork, type TrackNetwork } from '@/lib/track'
 import {
   ARTIFACT_STAGES, MAX_TESTNET_STAGE, stageByNumber, qualifyingStage,
-  countTransactions, getAckStage, setAckStage, claimArtifact,
+  countTransactions, getAckStage, setAckStage, getClaimedStage, claimArtifact,
 } from '@/lib/artifact'
 import { ClaimArtifactModal, type ClaimStatus } from './ClaimArtifactModal'
 
@@ -97,11 +97,16 @@ export function ArtifactClaimGate() {
 
     const evaluate = async (isInitial: boolean) => {
       if (!isInitial && (openRef.current || statusRef.current === 'claiming')) return
-      const count = await countTransactions(address)
+      const [count, claimedStage] = await Promise.all([
+        countTransactions(address),
+        getClaimedStage(address),                           // server truth (cross-device)
+      ])
       if (cancelled) return
       setTxCount(count)
       const eligible = qualifyingStage(count)              // highest testnet stage earned
-      const acked = getAckStage(address)                    // highest stage already claimed
+      // "Already claimed" is the max of the local ack and the server's on-chain-
+      // backed record — so a wallet claimed on another device is never re-offered.
+      const acked = Math.max(getAckStage(address), claimedStage)
       const offered = acked + 1                             // claim/evolve strictly in order
       if (offered <= eligible && offered <= MAX_TESTNET_STAGE && !dismissed.current.has(offered)) {
         setOfferedStage(offered)
