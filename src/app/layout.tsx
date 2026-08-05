@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const metadata: Metadata = {
   title: 'ZUREON HUB — Interactive Demo',
-  description: 'AI-powered TON wallet interface. Review every transaction with Claude before signing.',
+  description: 'AI-powered TON wallet interface. Review every transaction with ZUREON AI before signing.',
 }
 
 // viewport-fit: 'cover' lets the app draw into the iPhone Pro safe-area zones;

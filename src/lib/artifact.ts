@@ -13,6 +13,7 @@
  */
 import { getTransactions } from '@/lib/tonapi'
 import type { TrackNetwork } from '@/lib/track'
+import { getProofToken } from '@/lib/tonProof'
 
 export interface ArtifactStage {
   stage: number
@@ -134,9 +135,15 @@ export interface ClaimResult {
 export async function claimArtifact(
   address: string, network: TrackNetwork, targetStage: number,
 ): Promise<ClaimResult> {
+  // Proves this client actually controls `address` (see lib/tonProof.ts) —
+  // claim-nft.js rejects with `proof_required` if this is missing/expired.
+  const proofToken = getProofToken(address)
   const res = await fetch(CLAIM_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(proofToken ? { Authorization: `Bearer ${proofToken}` } : {}),
+    },
     body: JSON.stringify({ address, network, targetStage }),
   })
   let data: ClaimResult

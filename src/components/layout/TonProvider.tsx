@@ -5,6 +5,7 @@ import { useStore } from '@/lib/store'
 import { getBalance } from '@/lib/tonapi'
 import { reportConnect, chainToNetwork } from '@/lib/track'
 import { ArtifactClaimGate } from '@/components/artifact/ArtifactClaimGate'
+import { fetchTonProofPayload, verifyTonProof, storeProofToken, clearProofToken, type TonProofPayload } from '@/lib/tonProof'
 
 const MANIFEST_URL = 'https://zureon.app/tonconnect-manifest.json'
 
@@ -26,6 +27,58 @@ function WalletBridge() {
   // below re-runs on unrelated re-renders, and the KPI endpoint is deduped
   // server-side anyway, so this just avoids needless requests.
   const reportedAddress = useRef<string | null>(null)
+
+  // Ask every wallet connection to include a ton_proof — must be set BEFORE
+  // the connect handshake happens, so this runs once on mount, not on connect.
+  // If the payload fetch fails (rate-limited, function down), fall back to a
+  // normal connect with no proof request rather than blocking wallet connect
+  // entirely; the claim flow will just ask the user to reconnect later.
+  useEffect(() => {
+    let cancelled = false
+    tonConnectUI.setConnectRequestParameters({ state: 'loading' })
+    fetchTonProofPayload().then(payload => {
+      if (cancelled) return
+      tonConnectUI.setConnectRequestParameters(
+        payload ? { state: 'ready', value: { tonProof: payload } } : null,
+      )
+    })
+    return () => { cancelled = true }
+  }, [tonConnectUI])
+
+  // Verify the ton_proof returned on connect (present only on the interactive
+  // connect that just happened, never on a silent session restore) and cache
+  // the resulting address-bound token for claim-nft.js. Guarded by a ref so a
+  // re-render after storing doesn't re-verify the same connection.
+  const provenAddress = useRef<string | null>(null)
+  useEffect(() => {
+    if (!wallet || !address) { provenAddress.current = null; return }
+    if (provenAddress.current === address) return
+
+    const tonProofItem = (wallet as {
+      connectItems?: { tonProof?: { name: string; proof?: TonProofPayload } }
+    }).connectItems?.tonProof
+    const publicKey = (wallet as { account?: { publicKey?: string } }).account?.publicKey
+    if (!tonProofItem?.proof || !publicKey) return
+
+    provenAddress.current = address // mark attempted either way — no retry loop on failure
+    verifyTonProof(address, publicKey, tonProofItem.proof).then(token => {
+      if (token) storeProofToken(address, token)
+    })
+  }, [wallet, address])
+
+  // Drop the cached proof token on disconnect — it's already scoped to a
+  // single address (a different wallet's token is inert either way) and the
+  // server enforces its own 24h TTL regardless, but there's no reason to let
+  // it linger in localStorage past the session that earned it.
+  const lastConnectedAddress = useRef<string | null>(null)
+  useEffect(() => {
+    if (address) {
+      lastConnectedAddress.current = address
+    } else if (lastConnectedAddress.current) {
+      clearProofToken(lastConnectedAddress.current)
+      lastConnectedAddress.current = null
+    }
+  }, [address])
 
   // Sync SDK connection state into the global store on every change.
   useEffect(() => {
@@ -68,7 +121,7 @@ function WalletBridge() {
         .catch(() => {})
     }
     refresh()
-    const id = setInterval(refresh, 8000)
+    const id = setInterval(refresh, 15000)
     const onFocus = () => refresh()
     window.addEventListener('focus', onFocus)
     return () => {

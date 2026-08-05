@@ -136,7 +136,6 @@ export function ReviewWithAIScreen() {
             <div className="text-label-md font-semibold text-white">
               {isSwap ? 'Review Swap with AI' : 'Review with AI'}
             </div>
-            <div className="text-[10px] text-on-surface-variant">Powered by Claude</div>
           </div>
         </div>
       </header>
@@ -221,7 +220,6 @@ export function ReviewWithAIScreen() {
             </div>
             <div>
               <div className="text-label-md font-semibold text-white">ZUREON AI Analysis</div>
-              <div className="text-[10px] text-on-surface-variant">Claude Haiku</div>
             </div>
           </div>
 

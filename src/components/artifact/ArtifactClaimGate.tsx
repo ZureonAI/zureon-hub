@@ -29,6 +29,7 @@ function errorMessage(code: string | undefined, txCount: number, required?: numb
     case 'not_configured': return 'Claiming opens shortly — the collection is being finalized on-chain.'
     case 'rate_limit_exceeded': return 'Too many attempts. Please try again in a moment.'
     case 'invalid_address':return 'Wallet address not recognized. Reconnect and try again.'
+    case 'proof_required':  return 'Please disconnect and reconnect your wallet to verify ownership, then try again.'
     default:               return 'Something went wrong. Please try again.'
   }
 }

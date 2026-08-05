@@ -1,9 +1,18 @@
 const BASE = 'https://testnet.tonapi.io/v2'
 
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`${BASE}${path}`)
-  if (!res.ok) throw new Error(`tonapi ${path} → ${res.status}`)
-  return res.json() as Promise<T>
+  // Bounded so a hung tonapi request can't stall the NFT/jetton load indefinitely
+  // (the gallery awaits this in a Promise.all). Callers already treat a throw as
+  // "no data → keep last-good / empty", so an abort degrades gracefully.
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 6000)
+  try {
+    const res = await fetch(`${BASE}${path}`, { signal: ctrl.signal })
+    if (!res.ok) throw new Error(`tonapi ${path} → ${res.status}`)
+    return await res.json() as T
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 export async function getAccount(address: string) {
@@ -13,20 +22,26 @@ export async function getAccount(address: string) {
 // Live reads (balance, transactions) go to toncenter, whose testnet indexer
 // stays fresh — tonapi's lags minutes-to-days behind a confirmed tx.
 //
-// CRITICAL: we do NOT fall back to tonapi for these polled reads. toncenter
-// occasionally 500s; a tonapi fallback would then return a STALE value, and
-// since these are polled every few seconds the UI would visibly oscillate
-// between the fresh value and the stale one on alternating polls. Instead a
-// failed read returns null and the caller keeps its last-good value. A short
+// These reads go through our own /ton-proxy Netlify function rather than hitting
+// toncenter directly: the ANONYMOUS toncenter endpoint rate-limits to ~1 req/s
+// (429 after a small burst), and with balance + transactions polled every few
+// seconds from several places the direct reads kept 429-ing, so the Activity
+// list took several poll cycles to appear. The proxy injects a server-side API
+// key and caches each response for a few seconds, so all the polls collapse into
+// ~1 upstream call per window. It preserves toncenter's exact {ok,result} JSON.
+//
+// CRITICAL: we do NOT fall back to tonapi for these polled reads. A failed read
+// returns null and the caller keeps its last-good value — no stale tonapi
+// fallback, which under polling made the UI oscillate fresh↔cached. A short
 // timeout + one retry absorbs transient blips so "keep last-good" is rare.
-const TONCENTER_TESTNET = 'https://testnet.toncenter.com/api/v2'
+const TON_PROXY = '/.netlify/functions/ton-proxy'
 
-async function toncenterGet(path: string, attempts = 2): Promise<Response | null> {
+async function toncenterGet(query: string, attempts = 2): Promise<Response | null> {
   for (let i = 0; i < attempts; i++) {
     try {
       const ctrl = new AbortController()
       const timer = setTimeout(() => ctrl.abort(), 6000)
-      const res = await fetch(`${TONCENTER_TESTNET}${path}`, { signal: ctrl.signal })
+      const res = await fetch(`${TON_PROXY}?${query}`, { signal: ctrl.signal })
       clearTimeout(timer)
       if (res.ok) return res
     } catch {
@@ -38,7 +53,7 @@ async function toncenterGet(path: string, attempts = 2): Promise<Response | null
 
 // Balance in nanotons (string), or null on failure → caller keeps last-good.
 export async function getBalance(address: string): Promise<string | null> {
-  const res = await toncenterGet(`/getAddressBalance?address=${encodeURIComponent(address)}`)
+  const res = await toncenterGet(`method=getAddressBalance&address=${encodeURIComponent(address)}`)
   if (!res) return null
   try {
     const d = (await res.json()) as { ok?: boolean; result?: string }
@@ -162,7 +177,7 @@ function mapToncenterTx(tx: TonCenterTx, ourAddress: string): unknown {
 // NO tonapi fallback (see toncenterGet note): a stale fallback under polling made
 // the list oscillate between fresh and cached every interval.
 export async function getTransactions(address: string, limit = 20): Promise<unknown[] | null> {
-  const res = await toncenterGet(`/getTransactions?address=${encodeURIComponent(address)}&limit=${limit}`)
+  const res = await toncenterGet(`method=getTransactions&address=${encodeURIComponent(address)}&limit=${limit}`)
   if (!res) return null
   try {
     const d = (await res.json()) as { ok?: boolean; result?: TonCenterTx[] }

@@ -89,6 +89,7 @@ export function AskAI({ id }: { id: string }) {
         headers: { 'Content-Type': 'application/json' },
         signal:  ac.signal,
         body: JSON.stringify({
+          mode: 'explore',
           question,
           walletContext,
           history: messages.slice(-8),

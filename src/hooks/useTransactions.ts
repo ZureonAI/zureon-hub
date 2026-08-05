@@ -67,7 +67,7 @@ export function useTransactions(address: string | undefined) {
     // Poll so a new send/receive appears within a few seconds, matching the live
     // balance. Refetch on tab focus too (user returns after topping up).
     load(true)
-    const id = setInterval(() => load(false), 8000)
+    const id = setInterval(() => load(false), 15000)
     const onFocus = () => load(false)
     window.addEventListener('focus', onFocus)
     return () => {

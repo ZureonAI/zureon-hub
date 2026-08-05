@@ -33,24 +33,57 @@ export function DashboardScreen() {
   const tonAmount = wallet.balanceNano ? Number(wallet.balanceNano) / 1e9 : 0
   const totalUsd = tonPriceUsd > 0 ? tonAmount * tonPriceUsd : null
 
-  // On every entry to the dashboard, refetch the balance and show a skeleton
-  // until THIS fetch lands — don't flash the last-known (store-persisted, maybe
-  // stale) value and then visibly jump to the fresh one. `balanceReady` gates
-  // the skeleton; the store value is still what renders once it's fresh.
-  const [balanceReady, setBalanceReady] = useState(false)
-  useEffect(() => {
-    setBalanceReady(false)
-    if (!wallet.connected || !wallet.address) return
-    let cancelled = false
-    getBalance(wallet.address)
-      .then(bal => { if (!cancelled) { if (bal !== null) setWallet({ balanceNano: bal }); setBalanceReady(true) } })
-      .catch(() => { if (!cancelled) setBalanceReady(true) })
-    return () => { cancelled = true }
-  }, [wallet.connected, wallet.address, setWallet])
+  // Balance load lifecycle for this visit, as an explicit state machine so a
+  // failed read shows a real error + retry instead of an ETERNAL skeleton — a
+  // single toncenter blip used to leave the hero stuck on "Loading…" forever,
+  // which reads as a dead product. States:
+  //   'loading' — fetch in flight; show the skeleton (don't flash a maybe-stale
+  //               last-known value, then jump).
+  //   'ready'   — we have a value to show (fresh, or last-good on a soft failure).
+  //   'error'   — the read failed AND we have no value at all to fall back on.
+  const [balanceState, setBalanceState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [balanceReloadKey, setBalanceReloadKey] = useState(0)
 
-  // Show the balance skeleton until the first fresh fetch of this visit lands
-  // (or while the value is genuinely absent), instead of a stale/zero flash.
-  const balanceLoading = wallet.connected && (wallet.balanceNano === null || !balanceReady)
+  useEffect(() => {
+    if (!wallet.connected || !wallet.address) { setBalanceState('loading'); return }
+    const addr = wallet.address
+    let cancelled = false
+    let attempt = 0
+    let timer: ReturnType<typeof setTimeout> | undefined
+    setBalanceState('loading')
+
+    // Retry a couple of times behind the skeleton before surfacing an error, so
+    // a single transient blip (a rate-limit 429, a toncenter hiccup) self-heals
+    // invisibly instead of flashing a scary red "couldn't load" — only a
+    // genuinely persistent failure with nothing to show reaches the error state.
+    const onFail = () => {
+      if (cancelled) return
+      if (useStore.getState().wallet.balanceNano !== null) { setBalanceState('ready'); return }
+      attempt += 1
+      if (attempt < 3) timer = setTimeout(tryFetch, 2000)
+      else setBalanceState('error')
+    }
+    const tryFetch = () => {
+      getBalance(addr)
+        .then(bal => {
+          if (cancelled) return
+          if (bal !== null) { setWallet({ balanceNano: bal }); setBalanceState('ready') }
+          else onFail()
+        })
+        .catch(() => { if (!cancelled) onFail() })
+    }
+    tryFetch()
+    return () => { cancelled = true; if (timer) clearTimeout(timer) }
+  }, [wallet.connected, wallet.address, setWallet, balanceReloadKey])
+
+  // The background poller in TonProvider keeps retrying every 8s. The moment it
+  // (or anything) lands a balance, clear a stuck error state.
+  useEffect(() => {
+    if (wallet.balanceNano !== null) setBalanceState(s => (s === 'error' ? 'ready' : s))
+  }, [wallet.balanceNano])
+
+  const balanceLoading = wallet.connected && balanceState === 'loading'
+  const balanceFailed  = wallet.connected && balanceState === 'error'
 
   function navigate(path: string) {
     if (!wallet.connected) {
@@ -73,6 +106,8 @@ export function DashboardScreen() {
           <div className="text-display tracking-tight text-white flex items-baseline gap-sm">
             {balanceLoading ? (
               <span className="inline-block h-[0.85em] w-[160px] rounded-xl bg-white/[0.07] animate-pulse" aria-label="Loading balance" />
+            ) : balanceFailed ? (
+              <span className="text-on-surface-variant">—</span>
             ) : wallet.connected && totalUsd !== null ? (
               <>
                 <span>${Number(totalUsd.toFixed(2).split('.')[0]).toLocaleString()}</span>
@@ -89,12 +124,25 @@ export function DashboardScreen() {
               <span className="text-on-surface-variant">—</span>
             )}
           </div>
-          <div className="text-label-md text-primary-container mt-1">
-            {balanceLoading
-              ? 'Loading your portfolio…'
-              : wallet.connected
-                ? `${tonAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })} TON · on-chain`
-                : 'Connect a TON wallet to see your portfolio'}
+          <div className="text-label-md mt-1">
+            {balanceLoading ? (
+              <span className="text-primary-container">Loading your portfolio…</span>
+            ) : balanceFailed ? (
+              <button
+                type="button"
+                onClick={() => setBalanceReloadKey(k => k + 1)}
+                className="inline-flex items-center gap-xs text-error hover:underline active:scale-[0.97] transition-transform"
+              >
+                <span className="material-symbols-outlined text-[15px]">refresh</span>
+                Couldn’t load balance — tap to retry
+              </button>
+            ) : wallet.connected ? (
+              <span className="text-primary-container">
+                {`${tonAmount.toLocaleString(undefined, { maximumFractionDigits: 6 })} TON · on-chain`}
+              </span>
+            ) : (
+              <span className="text-primary-container">Connect a TON wallet to see your portfolio</span>
+            )}
           </div>
         </div>
 
