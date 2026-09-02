@@ -16,8 +16,8 @@ const PROJECTS = [
 ]
 
 const RISK_BADGE: Record<string, { label: string; classes: string }> = {
-  low:    { label: 'Low risk',    classes: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10' },
-  medium: { label: 'Med risk',    classes: 'text-yellow-400  border-yellow-400/30  bg-yellow-400/10'  },
+  low:    { label: 'Low risk',    classes: 'text-success border-success/30 bg-success/10' },
+  medium: { label: 'Med risk',    classes: 'text-warning border-warning/30 bg-warning/10'  },
   high:   { label: 'High risk',   classes: 'text-red-400     border-red-400/30     bg-red-400/10'     },
 }
 
@@ -56,7 +56,7 @@ export function ExploreScreen() {
           <span className="px-2 py-[2px] rounded-full border border-white/10 bg-white/[0.03] text-on-surface-variant text-[9px] uppercase tracking-wide font-semibold">Live data in V2</span>
         </div>
         <p className="text-body-md text-on-surface-variant">{PROJECTS.length} verified TON protocols, each shown with risk context and an AI safety check before you interact.</p>
-        <span className="px-3 py-1 rounded-full border border-yellow-500/20 bg-yellow-500/10 text-yellow-400 text-[10px] uppercase tracking-wide font-semibold w-fit">Not financial advice</span>
+        <span className="px-3 py-1 rounded-full border border-warning/20 bg-warning/10 text-warning text-[10px] uppercase tracking-wide font-semibold w-fit">Not financial advice</span>
       </div>
 
       {/* Category chips */}

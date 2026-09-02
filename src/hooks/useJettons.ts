@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useStore } from '@/lib/store'
 import { getJettonBalances } from '@/lib/tonapi'
 
@@ -11,10 +11,16 @@ export function useJettons() {
   const setJettonsLoading = useStore(s => s.setJettonsLoading)
   const jettons = useStore(s => s.jettons)
   const loading = useStore(s => s.jettonsLoading)
+  // `error` lets the UI tell a genuinely empty wallet apart from a failed load —
+  // a wallet app must never render "no tokens" when the network just hiccuped.
+  const [error, setError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
+  const reload = useCallback(() => setReloadKey(k => k + 1), [])
 
   useEffect(() => {
     if (!connected || !address) {
       setJettons([])
+      setError(null)
       return
     }
 
@@ -22,6 +28,7 @@ export function useJettons() {
 
     async function load() {
       setJettonsLoading(true)
+      setError(null)
       try {
         const raw = await getJettonBalances(address!)
         if (cancelled) return
@@ -35,7 +42,9 @@ export function useJettons() {
           })
         setJettons(filtered)
       } catch {
-        if (!cancelled) setJettons([])
+        // Surface the failure instead of masking it as an empty wallet; keep any
+        // previously-loaded list untouched so a poll blip doesn't wipe the view.
+        if (!cancelled) setError('Could not load your tokens.')
       } finally {
         if (!cancelled) setJettonsLoading(false)
       }
@@ -43,7 +52,7 @@ export function useJettons() {
 
     load()
     return () => { cancelled = true }
-  }, [connected, address, tonPriceUsd, setJettons, setJettonsLoading])
+  }, [connected, address, tonPriceUsd, setJettons, setJettonsLoading, reloadKey])
 
-  return { jettons, loading }
+  return { jettons, loading, error, reload }
 }

@@ -25,6 +25,11 @@
   --color-error:                     #ffb4ab;
   --color-error-container:           #93000a;
   --color-on-error:                  #690005;
+  /* Semantic status tokens (2026-08-24) — added so warning/success states stop
+     being hand-picked per screen as raw Tailwind yellow/emerald color values.
+     Both chosen to read comfortably above 4.5:1 on the dark surface (#131313). */
+  --color-warning:                   #f2c94c;
+  --color-success:                   #34d399;
   --color-background:                #131313;
   --color-on-background:             #e5e2e1;
 
@@ -79,8 +84,24 @@
 .text-headline-lg{ font-size: 32px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; }
 .text-display    { font-size: 48px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; }
 
+/* Small phones (≤380px — iPhone 11 Pro / mini / SE, many Androids). The base
+   scale is tuned for ~390px+; on a narrower screen the 48px balance and 24-32px
+   headings read as oversized and "stretched", pushing content off-screen. Tighten
+   the large end of the scale here so the layout stays proportionate and more fits.
+   Body/label sizes are left untouched (kept ≥14px for readability). Wider phones
+   (390px+, e.g. POCO F5 Pro / iPhone 12-15) keep the original scale. */
+@media (max-width: 380px) {
+  .text-display     { font-size: 36px; }
+  .text-headline-lg { font-size: 26px; }
+  .text-headline-md { font-size: 20px; }
+}
+
 :root {
   color-scheme: dark;
+
+  /* App chrome height (fixed header). Drives both the header box and the main
+     content's top padding so they always agree. Steps down on small phones. */
+  --hdr-h: 80px;
 
   /* Motion tokens — 3 tier system shared with marketing CSS */
   --motion-fast:   180ms;
@@ -89,6 +110,13 @@
   --ease-standard: cubic-bezier(0.25, 0.1, 0.25, 1);
   --ease-spring:   cubic-bezier(0.22, 1, 0.36, 1);
   --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Shorter fixed header on small phones. Placed AFTER the base :root above so the
+   cascade order lets this override win at ≤380px (a media query alone doesn't
+   raise specificity). Drives both the header box and main's top padding. */
+@media (max-width: 380px) {
+  :root { --hdr-h: 62px; }
 }
 
 html {

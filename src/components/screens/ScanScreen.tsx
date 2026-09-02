@@ -199,11 +199,11 @@ export function ScanScreen() {
           <div className="text-label-sm text-outline font-mono break-all">{result.address}</div>
 
           {result.risks.length === 0 ? (
-            <div className="text-label-sm text-emerald-400">No anomalies detected.</div>
+            <div className="text-label-sm text-success">No anomalies detected.</div>
           ) : (
             <ul className="flex flex-col gap-xs">
               {result.risks.map((r, i) => (
-                <li key={i} className="text-label-sm text-yellow-500/90 flex items-start gap-xs">
+                <li key={i} className="text-label-sm text-warning flex items-start gap-xs">
                   <span className="material-symbols-outlined text-[16px] mt-[1px]">warning</span>
                   {r}
                 </li>

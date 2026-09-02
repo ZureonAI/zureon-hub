@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { getTransactions } from '@/lib/tonapi'
 
 export interface TxEvent {
@@ -29,10 +29,15 @@ export function useTransactions(address: string | undefined) {
   const [txs, setTxs] = useState<TxEvent[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Bump to force a re-fetch (wired to a "retry" button when the first load
+  // fails). Included in the effect deps below so a retry re-runs the loader.
+  const [reloadKey, setReloadKey] = useState(0)
+  const reload = useCallback(() => setReloadKey(k => k + 1), [])
 
   useEffect(() => {
-    if (!address) { setTxs([]); return }
+    if (!address) { setTxs([]); setError(null); return }
     let cancelled = false
+    setError(null)
     // Clear any previous wallet's list so switching accounts (or entering the
     // screen) shows the loading skeleton, never the prior wallet's stale txs.
     setTxs([])
@@ -75,7 +80,7 @@ export function useTransactions(address: string | undefined) {
       clearInterval(id)
       window.removeEventListener('focus', onFocus)
     }
-  }, [address])
+  }, [address, reloadKey])
 
-  return { txs, loading, error }
+  return { txs, loading, error, reload }
 }

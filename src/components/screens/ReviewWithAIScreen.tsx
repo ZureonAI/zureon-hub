@@ -11,6 +11,10 @@ import { GlassCard } from '@/components/ui/GlassCard'
 import { ConfirmationScreen } from '@/components/screens/ConfirmationScreen'
 import type { TxResult } from '@/types/ton'
 
+// Seconds the Confirm button stays locked after the user requests confirmation —
+// the enforced pause that makes the double-confirm a real gate (see handleSign).
+const ARM_SECONDS = 2
+
 export function ReviewWithAIScreen() {
   const router = useRouter()
   const [tonConnectUI]   = useTonConnectUI()
@@ -24,11 +28,29 @@ export function ReviewWithAIScreen() {
   const [signing,         setSigning]          = useState(false)
   const [signError,       setSignError]        = useState<string | null>(null)
   const [confirmReal,     setConfirmReal]      = useState(false) // irreversible-transaction double-confirm (testnet)
+  const [armRemaining,    setArmRemaining]     = useState(ARM_SECONDS)
   const signingRef = useRef(false)
 
   useEffect(() => {
     if (pendingReview) review(pendingReview)
   }, []) // run once on mount
+
+  // Once the user asks to confirm, enforce a short arming delay before the sign
+  // button becomes usable. This turns the double-confirm from a same-button
+  // double-tap (which fast-tap muscle memory can defeat) into a real second
+  // gate: signing an irreversible transfer now needs a deliberate action after a
+  // visible pause, not a reflexive second tap in the same spot.
+  useEffect(() => {
+    if (!confirmReal) return
+    setArmRemaining(ARM_SECONDS)
+    const startedAt = Date.now()
+    const id = setInterval(() => {
+      const left = Math.ceil((ARM_SECONDS * 1000 - (Date.now() - startedAt)) / 1000)
+      setArmRemaining(left > 0 ? left : 0)
+      if (left <= 0) clearInterval(id)
+    }, 200)
+    return () => clearInterval(id)
+  }, [confirmReal])
 
   async function handleSign() {
     // Require explicit confirmation before signing (irreversible on-chain action)
@@ -36,6 +58,9 @@ export function ReviewWithAIScreen() {
       setConfirmReal(true)
       return
     }
+    // The arming delay must elapse before the first real sign attempt (the
+    // button is also disabled during it, this is defense in depth).
+    if (armRemaining > 0) return
 
     if (!pendingReview || signingRef.current) return
     signingRef.current = true
@@ -148,11 +173,11 @@ export function ReviewWithAIScreen() {
               <span className="material-symbols-outlined text-error text-[20px]">warning</span>
               <span className="text-error font-semibold text-label-md">Confirm before signing</span>
             </div>
-            <p className="text-on-surface-variant text-[13px] leading-relaxed">
+            <p className="text-on-surface text-[13px] leading-relaxed">
               This will send funds on <span className="text-white font-medium">TON testnet</span>. The action is irreversible. Double-check the address and amount above before confirming.
             </p>
-            <p className="text-on-surface-variant/60 text-[11px]">
-              Tap &ldquo;Confirm &amp; Sign&rdquo; below to proceed, or Cancel to go back.
+            <p className="text-on-surface-variant text-[12px] leading-relaxed">
+              The Confirm button unlocks after a brief pause. Tap it to proceed, or Cancel to go back.
             </p>
           </div>
         )}
@@ -178,7 +203,7 @@ export function ReviewWithAIScreen() {
                   </div>
                 </div>
                 <Row label="Min received"   value={<span className="text-white">{sd.minReceived} {sd.toSymbol}</span>} />
-                <Row label="Price impact"   value={<span className={parseFloat(sd.priceImpact) > 5 ? 'text-error' : parseFloat(sd.priceImpact) > 1 ? 'text-yellow-400' : 'text-primary-container'}>{parseFloat(sd.priceImpact).toFixed(2)}%</span>} />
+                <Row label="Price impact"   value={<span className={parseFloat(sd.priceImpact) > 5 ? 'text-error' : parseFloat(sd.priceImpact) > 1 ? 'text-warning' : 'text-primary-container'}>{parseFloat(sd.priceImpact).toFixed(2)}%</span>} />
                 <Row label="LP fee"         value={<span className="text-on-surface-variant">{parseFloat(sd.feePercent).toFixed(2)}%</span>} />
                 <Row label="Protocol gas"   value={<span className="text-on-surface-variant">0.25 TON</span>} />
                 <Row label="Router"         value={<span className="font-mono text-[11px] text-on-surface-variant break-all">{sd.routerAddress.slice(0, 12)}…</span>} />
@@ -234,7 +259,7 @@ export function ReviewWithAIScreen() {
                 Analysing {isSwap ? 'swap' : 'transaction'}...
               </div>
               {slow && (
-                <div className="text-[11px] text-on-surface-variant/60">
+                <div className="text-[11px] text-on-surface-variant">
                   Taking a bit longer than usual — almost there...
                 </div>
               )}
@@ -243,8 +268,8 @@ export function ReviewWithAIScreen() {
 
           {error && (
             <div className="flex items-start gap-sm">
-              <span className="material-symbols-outlined text-yellow-500 text-[16px] mt-[1px]">warning</span>
-              <div className="text-yellow-500/80 text-label-sm py-sm leading-relaxed">
+              <span className="material-symbols-outlined text-warning text-[16px] mt-[1px]">warning</span>
+              <div className="text-warning text-label-sm py-sm leading-relaxed">
                 {error} — you can still verify details manually and proceed.
               </div>
             </div>
@@ -271,11 +296,13 @@ export function ReviewWithAIScreen() {
           </div>
         )}
 
-        <p className="text-[11px] text-on-surface-variant/60 text-center leading-relaxed">
-          AI may make mistakes. Always verify the transaction details shown in your wallet —
-          your wallet displays the actual amount, recipient, and payload that will be signed.
-          ZUREON never holds your keys.
-        </p>
+        <div className="flex items-start gap-sm px-md py-sm rounded-xl border border-white/10 bg-white/[0.03]">
+          <span className="material-symbols-outlined text-primary-container text-[16px] mt-[1px]" aria-hidden="true">verified_user</span>
+          <p className="text-[12px] text-on-surface-variant leading-relaxed">
+            AI can make mistakes. Always verify the amount, recipient, and payload shown in your
+            wallet before signing — that screen is the source of truth. ZUREON never holds your keys.
+          </p>
+        </div>
       </main>
 
       {/* Action bar */}
@@ -289,7 +316,7 @@ export function ReviewWithAIScreen() {
         </button>
         <button
           onClick={handleSign}
-          disabled={!pendingReview || signing}
+          disabled={!pendingReview || signing || (confirmReal && armRemaining > 0)}
           className={`flex-[2] text-label-md py-sm px-md rounded-xl flex items-center justify-center gap-xs active:scale-[0.96] hover:opacity-90 transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
             confirmReal
               ? 'bg-error text-white'
@@ -300,6 +327,11 @@ export function ReviewWithAIScreen() {
             <>
               <span className="material-symbols-outlined text-[18px] animate-spin">sync</span>
               Waiting for wallet…
+            </>
+          ) : confirmReal && armRemaining > 0 ? (
+            <>
+              <span className="material-symbols-outlined text-[18px]">hourglass_top</span>
+              Confirm in {armRemaining}s…
             </>
           ) : confirmReal ? (
             <>

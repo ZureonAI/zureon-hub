@@ -26,20 +26,20 @@ export function ScreenLayout({ children, showBack, backHref }: Props) {
           when the app runs standalone on iPhone Pro. env()=0 on devices
           without insets, so the layout is unchanged there. */}
       <header
-        className="fixed top-0 w-full z-50 flex items-center justify-between px-6 bg-black/80 backdrop-blur-2xl border-b border-white/10"
-        style={{ height: 'calc(80px + env(safe-area-inset-top))', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}
+        className="fixed top-0 w-full z-50 flex items-center justify-between px-6 max-[380px]:px-4 bg-black/80 backdrop-blur-2xl border-b border-white/10"
+        style={{ height: 'calc(var(--hdr-h) + env(safe-area-inset-top))', paddingTop: 'calc(16px + env(safe-area-inset-top))' }}
       >
         <div className="flex items-center gap-md">
           {showBack && (
             <button
               onClick={handleBack}
               aria-label="Go back"
-              className="text-cyan-400 active:scale-[0.96] transition-transform duration-200 flex items-center justify-center p-[10px] -m-[10px]"
+              className="text-primary-container active:scale-[0.96] transition-transform duration-200 flex items-center justify-center p-[10px] -m-[10px]"
             >
               <span className="material-symbols-outlined" aria-hidden="true">arrow_back</span>
             </button>
           )}
-          <h1 className="font-semibold text-lg font-black tracking-widest text-cyan-400 uppercase">
+          <h1 className="font-semibold text-lg font-black tracking-widest text-primary-container uppercase">
             ZUREON HUB
           </h1>
           <span className="text-[9px] font-bold tracking-widest uppercase px-[6px] py-[2px] rounded bg-orange-500/15 text-orange-400 border border-orange-500/30">
@@ -49,8 +49,8 @@ export function ScreenLayout({ children, showBack, backHref }: Props) {
       </header>
 
       <main
-        className="md:px-lg flex flex-col gap-[24px] md:gap-[32px] w-full px-[16px]"
-        style={{ paddingTop: 'calc(104px + env(safe-area-inset-top))', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}
+        className="md:px-lg flex flex-col gap-[24px] max-[380px]:gap-[16px] md:gap-[32px] w-full px-[16px] max-[380px]:px-[12px]"
+        style={{ paddingTop: 'calc(var(--hdr-h) + 24px + env(safe-area-inset-top))', paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}
       >
         {children}
       </main>

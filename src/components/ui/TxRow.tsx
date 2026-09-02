@@ -33,7 +33,7 @@ export function TxRow({ tx, walletAddress }: { tx: TxEvent; walletAddress: strin
   return (
     <div className="glass-card rounded-[16px] p-[16px] flex items-center justify-between">
       <div className="flex items-center gap-md">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isIncoming ? 'bg-emerald-400/10' : 'bg-primary-container/10'}`}>
+        <div className={`w-9 h-9 rounded-full flex items-center justify-center ${isIncoming ? 'bg-success/10' : 'bg-primary-container/10'}`}>
           <span className="material-symbols-outlined text-[18px] text-primary-container">
             {isIncoming ? 'call_received' : 'send'}
           </span>
@@ -46,7 +46,7 @@ export function TxRow({ tx, walletAddress }: { tx: TxEvent; walletAddress: strin
         </div>
       </div>
       {amount && (
-        <span className={`text-label-md font-medium ${isIncoming ? 'text-emerald-400' : 'text-on-surface'}`}>
+        <span className={`text-label-md font-medium ${isIncoming ? 'text-success' : 'text-on-surface'}`}>
           {amount}
         </span>
       )}

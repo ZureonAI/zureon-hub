@@ -60,6 +60,15 @@ export default function OnboardingPage() {
           <p className="text-sm text-on-surface-variant">{current.subtitle}</p>
         </div>
 
+        {/* Testnet disclosure — shown from the very first screen so a new user
+            knows this is a practice environment BEFORE connecting a wallet. */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-container/10 border border-primary-container/25">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary-container" aria-hidden="true" />
+          <span className="text-[11px] font-medium text-on-surface-variant">
+            Currently on <span className="text-primary-container">TON testnet</span> — practice with no real funds
+          </span>
+        </div>
+
         {/* Progress dots */}
         <div className="w-full flex items-center gap-2">
           {STEPS.map((_, i) => (
@@ -87,8 +96,9 @@ export default function OnboardingPage() {
           I already have a wallet
         </button>
 
-        {/* Disclaimer inside card */}
-        <p className="text-[10px] text-outline/50 leading-tight">
+        {/* Disclaimer inside card — kept fully legible (never opacity-faded): this
+            is user-protection copy, so it must be readable, not decorative. */}
+        <p className="text-[11px] text-on-surface-variant leading-snug">
           ZUREON does not offer financial advice. Users are responsible for their own decisions.
         </p>
       </div>

@@ -1,5 +1,5 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useStore } from '@/lib/store'
 import { getNftItems, getArtifacts } from '@/lib/tonapi'
 import type { NftItem } from '@/types/nft'
@@ -11,17 +11,23 @@ export function useNFTs() {
   const setNftsLoading = useStore(s => s.setNftsLoading)
   const nfts = useStore(s => s.nfts)
   const loading = useStore(s => s.nftsLoading)
+  // `error` distinguishes a genuinely empty gallery from a load failure, so the
+  // UI never claims "no NFTs" when both data sources were merely unreachable.
+  const [error, setError] = useState<string | null>(null)
+  const [reloadKey, setReloadKey] = useState(0)
+  const reload = useCallback(() => setReloadKey(k => k + 1), [])
 
   useEffect(() => {
     if (!connected || !address) {
       setNfts([])
+      setError(null)
       return
     }
 
     let cancelled = false
 
     async function load(showSpinner: boolean) {
-      if (showSpinner) setNftsLoading(true)
+      if (showSpinner) { setNftsLoading(true); setError(null) }
       try {
         // Our claimed Genesis Artifact comes from a fresh source (get-artifacts)
         // so it shows before tonapi's laggy testnet indexer catches up; tonapi
@@ -30,15 +36,25 @@ export function useNFTs() {
         // address lookup hiccups) while tonapi has the real one — so a plain
         // address dedup let the artifact appear twice. Dedup our Genesis items by
         // index instead, and prefer the entry with a real on-chain address.
-        const [general, artifacts] = await Promise.all([
-          getNftItems(address!).catch(() => [] as NftItem[]),
-          getArtifacts(address!).catch(() => [] as NftItem[]),
+        //
+        // Track each source's success so we can tell "both sources returned
+        // nothing" (genuinely empty) from "both sources FAILED" (network error):
+        // the latter must surface an error + retry, not a false "no NFTs".
+        const [generalRes, artifactsRes] = await Promise.all([
+          getNftItems(address!).then(d => ({ ok: true, data: d })).catch(() => ({ ok: false, data: [] as NftItem[] })),
+          getArtifacts(address!).then(d => ({ ok: true, data: d })).catch(() => ({ ok: false, data: [] as NftItem[] })),
         ])
+        if (cancelled) return
+        if (!generalRes.ok && !artifactsRes.ok) {
+          // Every source failed — don't overwrite a last-good list with empty.
+          if (showSpinner) setError('Could not load your NFTs.')
+          return
+        }
         const isGenesis = (n: NftItem) =>
           n.collectionName === 'ZUREON Founders' || (n.name || '').startsWith('ZUREON Genesis Artifact')
         const isSynthetic = (a: string) => a.startsWith('zureon-artifact-')
         const byKey = new Map<string, NftItem>()
-        for (const n of [...artifacts, ...general] as NftItem[]) {
+        for (const n of [...artifactsRes.data, ...generalRes.data] as NftItem[]) {
           if (!n) continue
           const key = isGenesis(n) ? `genesis:${n.index}` : `addr:${n.address}`
           const existing = byKey.get(key)
@@ -47,9 +63,10 @@ export function useNFTs() {
           // detail link works, without adding a duplicate row.
           if (isSynthetic(existing.address) && !isSynthetic(n.address)) byKey.set(key, n)
         }
-        if (!cancelled) setNfts([...byKey.values()])
+        setNfts([...byKey.values()])
+        setError(null)
       } catch {
-        if (!cancelled && showSpinner) setNfts([])
+        if (!cancelled && showSpinner) setError('Could not load your NFTs.')
       } finally {
         if (!cancelled && showSpinner) setNftsLoading(false)
       }
@@ -66,7 +83,7 @@ export function useNFTs() {
       clearInterval(id)
       window.removeEventListener('focus', onFocus)
     }
-  }, [connected, address, setNfts, setNftsLoading])
+  }, [connected, address, setNfts, setNftsLoading, reloadKey])
 
-  return { nfts, loading }
+  return { nfts, loading, error, reload }
 }

@@ -19,6 +19,21 @@ export async function getAccount(address: string) {
   return get<{ balance: string; status: string }>(`/accounts/${encodeURIComponent(address)}`)
 }
 
+// Authoritative jetton wallet address for (owner, jetton), derived from chain
+// state by tonapi. Used as an INDEPENDENT oracle to verify the address STON.fi's
+// API returns before it becomes a real transfer destination (see
+// stonfi-builder.ts getJettonWallet). Throws on any failure so callers can fail
+// CLOSED rather than trust an unverifiable destination. In a real swap the owner
+// (user or STON.fi router) always holds the jetton, so wallet_address is present.
+export async function getJettonWalletAddress(ownerAddress: string, jettonAddress: string): Promise<string> {
+  const data = await get<{ wallet_address?: { address?: string } }>(
+    `/accounts/${encodeURIComponent(ownerAddress)}/jettons/${encodeURIComponent(jettonAddress)}`
+  )
+  const addr = data?.wallet_address?.address
+  if (!addr || typeof addr !== 'string') throw new Error('tonapi: no wallet_address for owner+jetton')
+  return addr
+}
+
 // Live reads (balance, transactions) go to toncenter, whose testnet indexer
 // stays fresh — tonapi's lags minutes-to-days behind a confirmed tx.
 //

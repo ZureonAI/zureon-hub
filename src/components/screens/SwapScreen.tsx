@@ -56,7 +56,7 @@ export function SwapScreen() {
     : '—'
 
   const impactLevel = quote ? parsePriceImpact(quote.priceImpact) : null
-  const impactColor = impactLevel === 'low' ? 'text-primary-container' : impactLevel === 'medium' ? 'text-yellow-400' : 'text-error'
+  const impactColor = impactLevel === 'low' ? 'text-primary-container' : impactLevel === 'medium' ? 'text-warning' : 'text-error'
 
   function flipAssets() {
     const a = fromSymbol; const b = toSymbol
@@ -232,7 +232,7 @@ export function SwapScreen() {
           <span className="material-symbols-outlined text-[18px]">schedule</span>
           Swap — Coming in V2
         </button>
-        <p className="text-[11px] text-on-surface-variant/50 text-center">
+        <p className="text-[11px] text-on-surface-variant text-center">
           DEX swaps are in development. Send &amp; Receive work on testnet now.
         </p>
       </div>

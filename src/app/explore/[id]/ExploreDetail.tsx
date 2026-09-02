@@ -69,11 +69,11 @@ export function ExploreDetail({ id }: { id: string }) {
       </div>
 
       {/* Risk notes */}
-      <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-3 flex items-start gap-sm">
-        <span className="material-symbols-outlined text-yellow-400 text-[18px] mt-0.5 flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+      <div className="bg-warning/5 border border-warning/20 rounded-xl p-3 flex items-start gap-sm">
+        <span className="material-symbols-outlined text-warning text-[18px] mt-0.5 flex-shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
         <div>
-          <span className="text-xs text-yellow-400 font-semibold">Risk notes: </span>
-          <span className="text-xs text-outline">{p.risks}</span>
+          <span className="text-xs text-warning font-semibold">Risk notes: </span>
+          <span className="text-xs text-on-surface-variant">{p.risks}</span>
         </div>
       </div>
 
@@ -109,7 +109,7 @@ export function ExploreDetail({ id }: { id: string }) {
         Ask ZUREON AI about this project
       </button>
 
-      <p className="text-center text-[10px] text-outline/60 pb-sm leading-relaxed">
+      <p className="text-center text-[11px] text-on-surface-variant pb-sm leading-relaxed">
         ZUREON provides tools and information for interacting with Web3. It does not offer financial advice or guarantees. Users are responsible for their own actions and decisions.
       </p>
     </ScreenLayout>

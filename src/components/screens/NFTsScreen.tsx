@@ -8,7 +8,7 @@ import { NftCard } from '@/components/ui/NftCard'
 
 export function NFTsScreen() {
   const wallet = useStore(s => s.wallet)
-  const { nfts, loading } = useNFTs()
+  const { nfts, loading, error, reload } = useNFTs()
   const [tonConnectUI] = useTonConnectUI()
 
   return (
@@ -49,7 +49,22 @@ export function NFTsScreen() {
         </div>
       )}
 
-      {wallet.connected && !loading && nfts.length === 0 && (
+      {wallet.connected && !loading && nfts.length === 0 && error && (
+        <GlassCard className="p-[24px] flex flex-col items-center gap-sm text-center">
+          <span className="material-symbols-outlined text-warning text-[28px]">cloud_off</span>
+          <div className="text-label-sm text-on-surface-variant">Couldn’t load your NFTs.</div>
+          <button
+            type="button"
+            onClick={reload}
+            className="inline-flex items-center gap-xs text-primary-container text-label-sm hover:underline active:scale-[0.97] transition-transform"
+          >
+            <span className="material-symbols-outlined text-[15px]">refresh</span>
+            Retry
+          </button>
+        </GlassCard>
+      )}
+
+      {wallet.connected && !loading && nfts.length === 0 && !error && (
         <GlassCard className="p-[24px] flex flex-col items-center gap-sm text-center">
           <span className="material-symbols-outlined text-outline text-[28px]">image</span>
           <div className="text-label-sm text-on-surface-variant">No NFTs in this wallet yet</div>

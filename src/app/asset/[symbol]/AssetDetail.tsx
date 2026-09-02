@@ -13,7 +13,7 @@ export function AssetDetail({ symbol }: { symbol: string }) {
   const wallet = useStore(s => s.wallet)
   const jettons = useStore(s => s.jettons)
   const tonPriceUsd = useStore(s => s.tonPriceUsd)
-  const { txs, loading: txLoading } = useTransactions(wallet.address ?? undefined)
+  const { txs, loading: txLoading, error: txError, reload: reloadTxs } = useTransactions(wallet.address ?? undefined)
 
   const isTon = symbol === 'TON'
   const jetton = !isTon ? jettons.find(j => j.symbol === symbol) : null
@@ -108,7 +108,22 @@ export function AssetDetail({ symbol }: { symbol: string }) {
             </div>
           )}
 
-          {!txLoading && assetTxs.length === 0 && (
+          {!txLoading && assetTxs.length === 0 && txError && txs.length === 0 && (
+            <div className="glass-card rounded-[16px] p-[20px] flex flex-col items-center gap-sm text-center">
+              <span className="material-symbols-outlined text-warning text-[28px]">cloud_off</span>
+              <div className="text-label-sm text-on-surface-variant">Couldn’t load activity.</div>
+              <button
+                type="button"
+                onClick={reloadTxs}
+                className="inline-flex items-center gap-xs text-primary-container text-label-sm hover:underline active:scale-[0.97] transition-transform"
+              >
+                <span className="material-symbols-outlined text-[15px]">refresh</span>
+                Retry
+              </button>
+            </div>
+          )}
+
+          {!txLoading && assetTxs.length === 0 && !(txError && txs.length === 0) && (
             <div className="glass-card rounded-[16px] p-[20px] flex flex-col items-center gap-sm text-center">
               <span className="material-symbols-outlined text-outline text-[28px]">receipt_long</span>
               <div className="text-label-sm text-on-surface-variant">No {symbol} transactions yet</div>

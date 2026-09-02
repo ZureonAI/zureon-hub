@@ -22,14 +22,16 @@ export function BottomNav() {
           <Link
             key={tab.label}
             href={tab.href}
+            aria-current={active ? 'page' : undefined}
             className={`flex flex-col items-center justify-center w-full h-full gap-1 active:scale-[0.96] transition-transform duration-200 ${
               active
-                ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(0,212,255,0.15)]'
-                : 'text-zinc-500 hover:text-cyan-300'
+                ? 'text-primary-container drop-shadow-[0_0_8px_rgba(0,212,255,0.15)]'
+                : 'text-on-surface-variant hover:text-primary'
             }`}
           >
             <span
               className="material-symbols-outlined text-[24px]"
+              aria-hidden="true"
               style={active && tab.fill ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               {tab.icon}

@@ -21,6 +21,7 @@
 import { beginCell, Address, Cell } from '@ton/core'
 import { STONFI_ROUTER, SWAP_GAS_TON } from '@/lib/constants'
 import { TON_ADDR } from '@/lib/stonfi'
+import { getJettonWalletAddress } from '@/lib/tonapi'
 
 const STONFI_API = 'https://api.ston.fi/v1'
 
@@ -84,20 +85,23 @@ export interface SwapMessage {
 }
 
 /**
- * Fetches the jetton wallet address for a given owner via STON.fi API.
+ * Fetches the jetton wallet address for a given owner via STON.fi API, then
+ * INDEPENDENTLY verifies it against chain state before returning it.
  *
- * SECURITY NOTE (2026-07-11 audit): this address becomes the actual
- * destination of a real transfer in the Jetton→TON path below — if
- * api.ston.fi were ever compromised or MITM'd, a malformed-but-plausible
- * address here could redirect funds. `Address.parse` below only catches a
- * garbage/malformed response (wrong length, invalid checksum, non-address
- * string) — it does NOT independently re-derive the expected jetton-wallet
- * address on-chain from (jettonAddress, ownerAddress) to confirm this is
- * really the right wallet. That stronger check is real work (needs the
- * jetton master's wallet code to compute the deterministic contract
- * address) and belongs with the external security audit gating V2 (see the
- * "Coming in V2" note in buildSwapMessages below) — this function must not
- * be wired into a live, unreviewed swap path until that's done.
+ * SECURITY (2026-07-11 audit → 2026-08-24 fix): this address becomes the actual
+ * destination of a real transfer in the Jetton→TON path below, so if api.ston.fi
+ * were ever compromised or MITM'd, a valid-format-but-wrong address here could
+ * redirect funds. `Address.parse` alone only rejects a garbage/malformed string;
+ * it can't tell a wrong-but-well-formed address from the right one. We now
+ * re-derive the canonical jetton wallet for (jetton, owner) from chain state via
+ * tonapi (an independent source from STON.fi) and require an EXACT match. A
+ * single compromised source can no longer redirect funds — two independent
+ * sources must agree. This is a fund-safety check, so it fails CLOSED: if the
+ * oracle is unreachable OR the two disagree, we throw and build no transfer.
+ *
+ * NOTE: this hardens the builder but does NOT by itself authorize un-gating the
+ * live swap CTA — that still requires the external security audit (Milestone 4)
+ * and the "Coming in V2" review noted in buildSwapMessages below.
  */
 async function getJettonWallet(jettonAddress: string, ownerAddress: string): Promise<string> {
   const url = `${STONFI_API}/jetton/${encodeURIComponent(jettonAddress)}/address?owner_address=${encodeURIComponent(ownerAddress)}`
@@ -105,11 +109,25 @@ async function getJettonWallet(jettonAddress: string, ownerAddress: string): Pro
   if (!res.ok) throw new Error(`STON.fi wallet lookup ${res.status}`)
   const data = await res.json() as { address: string }
   if (!data.address) throw new Error('STON.fi wallet address missing in response')
+
+  let stonfiWallet: Address
   try {
-    Address.parse(data.address)
+    stonfiWallet = Address.parse(data.address)
   } catch {
     throw new Error('STON.fi returned a malformed jetton wallet address')
   }
+
+  // Independent on-chain re-derivation (fail closed on any doubt).
+  let onchainWallet: Address
+  try {
+    onchainWallet = Address.parse(await getJettonWalletAddress(ownerAddress, jettonAddress))
+  } catch {
+    throw new Error('Could not verify the jetton wallet on-chain — swap aborted for safety')
+  }
+  if (!stonfiWallet.equals(onchainWallet)) {
+    throw new Error('Jetton wallet address mismatch (STON.fi vs on-chain) — swap aborted for safety')
+  }
+
   return data.address
 }
 

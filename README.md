@@ -24,7 +24,7 @@ HTML/JS served from a CDN.
 | Send | `/send` | Guided send flow with format validation and a QR-scan entry point |
 | Scan QR | `/scan` | Camera-based TON address scanner with on-chain typosquat/freshness checks before handing off to Send |
 | Receive | `/receive` | Real scannable QR of the connected wallet's address |
-| Review with AI | `/review` | AI transaction review before signing — plain-language risk summary (currently Groq/Llama 3.3 70B, Claude-ready behind a toggle) |
+| Review with AI | `/review` | AI transaction review before signing — plain-language risk summary (currently Groq; a Claude upgrade is planned at mainnet) |
 | Swap | `/swap` | STON.fi swap UI (payload builder implemented; swap execution gated as "Coming in V2") |
 | NFT Gallery | `/nfts` | NFTs held in the connected wallet, incl. the earned ZUREON Genesis Artifact |
 | NFT detail | `/nft?address=` | Single NFT view — item/collection address, send disabled pending V2 |
@@ -48,8 +48,8 @@ HTML/JS served from a CDN.
   Jettons and general NFTs come from tonapi.
 - **AI review**: this app calls backend functions
   (`/.netlify/functions/ai-proxy`, `profile-insight`) that wrap an AI provider
-  server-side — currently **Groq/Llama 3.3 70B**, with Claude-ready behind a
-  toggle. That backend — along with rate limiting, prompt-injection guarding,
+  server-side — currently **Groq**; a Claude (Anthropic) upgrade is planned at
+  mainnet, not currently wired. That backend — along with rate limiting, prompt-injection guarding,
   and server-side recipient verification — lives in ZUREON's main site
   repository, not here. This repo contains the client that calls it.
 - **Genesis Artifact**: an evolving claim NFT earned through real testnet usage

@@ -22,8 +22,8 @@ export function DashboardScreen() {
   const connectError = useStore(s => s.connectError)
   const [tonConnectUI] = useTonConnectUI()
   const tonPriceUsd = useStore(s => s.tonPriceUsd)
-  const { jettons, loading: jettonsLoading } = useJettons()
-  const { txs, loading: txLoading } = useTransactions(wallet.address ?? undefined)
+  const { jettons, loading: jettonsLoading, error: jettonsError, reload: reloadJettons } = useJettons()
+  const { txs, loading: txLoading, error: txError, reload: reloadTxs } = useTransactions(wallet.address ?? undefined)
   const insight = useProfileInsight()
 
   // Keeps the launcher's home tile / widget in sync with what's on screen here —
@@ -96,7 +96,7 @@ export function DashboardScreen() {
   return (
     <ScreenLayout>
       {/* Balance hero */}
-      <GlassCard className="p-[20px] md:p-lg relative overflow-hidden flex flex-col gap-md">
+      <GlassCard className="p-[20px] max-[380px]:p-[16px] md:p-lg relative overflow-hidden flex flex-col gap-md max-[380px]:gap-sm">
         <div className="absolute -top-24 -right-24 w-64 h-64 bg-primary-container opacity-[0.03] blur-3xl rounded-full pointer-events-none" />
 
         <div className="flex flex-col gap-xs">
@@ -146,25 +146,28 @@ export function DashboardScreen() {
           </div>
         </div>
 
-        {/* Action buttons */}
-        <div className="flex flex-wrap gap-md mt-sm">
+        {/* Action buttons — a 3-column grid (not flex-wrap+min-width, which
+            overflowed and dropped "Swap" onto a second row at 340px, the
+            narrowest device the app targets). Grid keeps three equal columns
+            down to the smallest width. */}
+        <div className="grid grid-cols-3 gap-sm mt-sm">
           <button
             onClick={() => navigate('/send')}
-            className="flex-1 min-w-[120px] bg-primary-container text-black text-label-md py-sm px-md rounded-lg flex items-center justify-center gap-xs active:scale-[0.96] hover:opacity-90 transition-all duration-200"
+            className="bg-primary-container text-black text-label-md py-sm px-sm rounded-lg flex items-center justify-center gap-xs active:scale-[0.96] hover:opacity-90 transition-all duration-200"
           >
             <span className="material-symbols-outlined text-[18px]">send</span>
             Send
           </button>
           <button
             onClick={() => navigate('/receive')}
-            className="flex-1 min-w-[120px] glass-card border-secondary-container text-on-surface text-label-md py-sm px-md rounded-xl flex items-center justify-center gap-xs active:scale-[0.96] hover:bg-white/5 transition-all duration-200"
+            className="glass-card border-secondary-container text-on-surface text-label-md py-sm px-sm rounded-xl flex items-center justify-center gap-xs active:scale-[0.96] hover:bg-white/5 transition-all duration-200"
           >
             <span className="material-symbols-outlined text-[18px]">call_received</span>
             Receive
           </button>
           <button
             onClick={() => navigate('/swap')}
-            className="flex-1 min-w-[120px] glass-card text-on-surface text-label-md py-sm px-md rounded-xl flex items-center justify-center gap-xs active:scale-[0.96] hover:bg-white/5 transition-all duration-200"
+            className="glass-card text-on-surface text-label-md py-sm px-sm rounded-xl flex items-center justify-center gap-xs active:scale-[0.96] hover:bg-white/5 transition-all duration-200"
           >
             <span className="material-symbols-outlined text-[18px]">swap_horiz</span>
             Swap
@@ -205,9 +208,9 @@ export function DashboardScreen() {
               Connect TON Wallet
             </button>
             {connectError && (
-              <div className="w-full flex items-start gap-xs px-md py-sm rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-left">
-                <span className="material-symbols-outlined text-yellow-500 text-[18px] mt-[1px]">warning</span>
-                <p className="text-yellow-500/90 text-label-sm leading-relaxed">{connectError}</p>
+              <div className="w-full flex items-start gap-xs px-md py-sm rounded-xl border border-warning/30 bg-warning/10 text-left">
+                <span className="material-symbols-outlined text-warning text-[18px] mt-[1px]">warning</span>
+                <p className="text-warning text-label-sm leading-relaxed">{connectError}</p>
               </div>
             )}
           </GlassCard>
@@ -282,7 +285,22 @@ export function DashboardScreen() {
               </div>
             )}
 
-            {!jettonsLoading && jettons.length === 0 && (
+            {!jettonsLoading && jettons.length === 0 && jettonsError && (
+              <div className="glass-card rounded-[16px] p-[20px] flex flex-col items-center gap-sm text-center">
+                <span className="material-symbols-outlined text-warning text-[28px]">cloud_off</span>
+                <div className="text-label-sm text-on-surface-variant">Couldn’t load your tokens.</div>
+                <button
+                  type="button"
+                  onClick={reloadJettons}
+                  className="inline-flex items-center gap-xs text-primary-container text-label-sm hover:underline active:scale-[0.97] transition-transform"
+                >
+                  <span className="material-symbols-outlined text-[15px]">refresh</span>
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {!jettonsLoading && jettons.length === 0 && !jettonsError && (
               <div className="glass-card rounded-[16px] p-[20px] flex flex-col items-center gap-sm text-center">
                 <span className="material-symbols-outlined text-outline text-[28px]">token</span>
                 <div className="text-label-sm text-on-surface-variant">No other tokens in this wallet</div>
@@ -332,7 +350,22 @@ export function DashboardScreen() {
             </div>
           )}
 
-          {!txLoading && txs.length === 0 && (
+          {!txLoading && txs.length === 0 && txError && (
+            <div className="glass-card rounded-[16px] p-[20px] flex flex-col items-center gap-sm text-center">
+              <span className="material-symbols-outlined text-warning text-[28px]">cloud_off</span>
+              <div className="text-label-sm text-on-surface-variant">Couldn’t load recent activity.</div>
+              <button
+                type="button"
+                onClick={reloadTxs}
+                className="inline-flex items-center gap-xs text-primary-container text-label-sm hover:underline active:scale-[0.97] transition-transform"
+              >
+                <span className="material-symbols-outlined text-[15px]">refresh</span>
+                Retry
+              </button>
+            </div>
+          )}
+
+          {!txLoading && txs.length === 0 && !txError && (
             <div className="glass-card rounded-[16px] p-[20px] flex flex-col items-center gap-sm text-center">
               <span className="material-symbols-outlined text-outline text-[28px]">receipt_long</span>
               <div className="text-label-sm text-on-surface-variant">No recent transactions</div>
@@ -398,7 +431,7 @@ function ProfileInsightCard({
         )}
 
         {error && !loading && (
-          <div className="text-yellow-500/80 text-label-sm">
+          <div className="text-warning text-label-sm">
             Couldn&apos;t generate insight right now. Try again later.
           </div>
         )}

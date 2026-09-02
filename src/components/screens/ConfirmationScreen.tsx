@@ -48,7 +48,7 @@ export function ConfirmationScreen({ result, onDone }: Props) {
               ? `${result.amountTon.toFixed(6)} TON sent`
               : 'Signed and broadcast to TON network'}
           </div>
-          <div className="text-[11px] text-on-surface-variant/50 mt-xs">
+          <div className="text-[11px] text-on-surface-variant mt-xs">
             {new Date(result.timestamp).toLocaleTimeString()}
           </div>
         </div>
@@ -69,7 +69,7 @@ export function ConfirmationScreen({ result, onDone }: Props) {
               {copied ? 'Copied' : 'Copy'}
             </button>
           </div>
-          <p className="text-[11px] text-on-surface-variant/60 leading-relaxed">
+          <p className="text-[11px] text-on-surface-variant leading-relaxed">
             Broadcast to the TON network. Usually confirms in 5–30 seconds.
             TonViewer may take up to 30 seconds to index it — if the link shows
             nothing yet, wait a moment and refresh.
